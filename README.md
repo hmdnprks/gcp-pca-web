@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GCP PCA Mind Map
+
+An interactive, single-page **mind map for Google Cloud Professional Cloud Architect (PCA)** exam prep. It presents GCP services as an expandable pillar → service tree optimized for rapid recall and architectural decision-making — a macro "bird's-eye" view of your knowledge gaps plus a granular per-service "deep dive."
+
+Built with **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, and **Lucide** icons.
+
+## Features
+
+- **Visual hierarchy** — root node (`GCP PCA Curriculum`) → 6 core pillars (Compute · Storage & Databases · Networking · Security, Identity & Compliance · Management, Operations & Tools · Data Analytics & AI/ML) → individual services, laid out as clean, responsive, collapsible columns for maximum text readability.
+- **Confidence heatmap** — set every service to **Weak** (red), **Reviewing** (amber), or **Mastered** (green). Node tint + per-pillar mastery bars + a global tally let you spot gaps at a glance.
+- **Dependency edges** — hovering a service highlights its frequently-paired services (e.g. Pub/Sub ↔ Dataflow, IAP ↔ Cloud Run / Compute Engine) and dims the rest.
+- **Search & filter** — live search over service names, taglines, exam keywords and case studies (press `/` to focus), plus filter chips to isolate confidence states (e.g. "show only Weak").
+- **Deep-dive panel** — click a node for a slide-out organized by PCA exam domains: Design & Architecture, Security & Compliance, Operations & Reliability, Exam Keywords, Anti-patterns, and Case Study tags (EHR Healthcare, Mountkirk Games, Helicopter Racing League, TerramEarth).
+- **Persistent progress** — confidence levels and expanded/collapsed state are saved to `localStorage`, so study progress survives refreshes.
+
+All **37 services across all 6 pillars are fully populated** with exam-grade content.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the URL printed in the terminal (defaults to [http://localhost:3000](http://localhost:3000); Next picks the next free port if it's taken).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+├── layout.tsx                 # Root layout + metadata (dark theme)
+├── page.tsx                   # Renders <MindMap />
+├── globals.css                # Tailwind v4 + dark zinc theme
+├── components/
+│   ├── MindMap.tsx            # Main map: header, search/filter, pillar columns, nodes
+│   ├── DetailPanel.tsx        # Slide-out deep-dive panel
+│   └── ConfidencePicker.tsx   # Weak / Reviewing / Mastered selector
+└── lib/
+    ├── curriculum.ts          # Single source of truth: pillars → services → detail
+    ├── confidence.ts          # Confidence color/style tokens
+    └── icons.ts               # String-key → Lucide icon map
+```
 
-## Learn More
+## Editing the Curriculum
 
-To learn more about Next.js, take a look at the following resources:
+All content lives in **`app/lib/curriculum.ts`**. To add or change a service, edit its entry in the relevant pillar:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- A service with a `detail: { ... }` block renders full deep-dive content.
+- A service without `detail` renders as a structural placeholder (a `stub` badge + "not yet populated" panel).
+- `pairings: ["<service-id>", ...]` drives the hover-highlight dependency edges (bidirectional).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Icons are referenced by string key and mapped in `app/lib/icons.ts` (unknown keys fall back to a default).
 
-## Deploy on Vercel
+## Tech Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- The interactive map is a Client Component (`"use client"`); `localStorage` is read after mount to avoid SSR hydration mismatches.
+- `next/font/google` loads the Geist font at build time, so `next build` requires network access to Google Fonts. Offline builds can swap to `next/font/local` or a system font stack in `app/layout.tsx`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Command         | Description                    |
+| --------------- | ------------------------------ |
+| `npm run dev`   | Start the development server   |
+| `npm run build` | Production build               |
+| `npm run start` | Serve the production build     |
+| `npm run lint`  | Run ESLint                     |
