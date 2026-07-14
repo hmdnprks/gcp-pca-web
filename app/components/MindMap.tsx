@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
   ChevronDown,
   Gauge,
@@ -9,7 +10,6 @@ import {
   Link2,
   RotateCcw,
   Search,
-  Sparkles,
   X,
 } from "lucide-react";
 import type { Confidence, Service } from "../lib/curriculum";
@@ -284,9 +284,14 @@ export function MindMap() {
       <header className="z-30 shrink-0 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="rounded-lg bg-gradient-to-br from-sky-500 to-violet-600 p-2">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
+            <Image
+              src="/gcp-logo.png"
+              alt="Google Cloud"
+              width={320}
+              height={320}
+              priority
+              className="h-8 w-8 shrink-0"
+            />
             <div className="leading-tight">
               <h1 className="text-sm font-bold tracking-tight text-zinc-50">
                 GCP PCA Mind Map

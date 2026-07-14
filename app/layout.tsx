@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "GCP PCA Mind Map",
   description:
     "Interactive mind map for Google Cloud Professional Cloud Architect exam prep — confidence heatmap, service pairings, and deep-dive exam criteria.",
+  icons: { icon: "/gcp-logo.png" },
 };
 
 export default function RootLayout({
