@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  Gauge,
   GraduationCap,
   Layers,
   Link2,
@@ -20,6 +21,7 @@ import { ConfidencePicker } from "./ConfidencePicker";
 import { DetailPanel } from "./DetailPanel";
 import { QuizMode } from "./QuizMode";
 import { CaseStudyExplorer } from "./CaseStudyExplorer";
+import { ReadinessDashboard } from "./ReadinessDashboard";
 
 type ConfidenceMap = Record<string, Confidence>;
 type FilterValue = "all" | Confidence | "unset";
@@ -169,6 +171,7 @@ export function MindMap() {
   const [hydrated, setHydrated] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const [explorerOpen, setExplorerOpen] = useState(false);
+  const [readinessOpen, setReadinessOpen] = useState(false);
   const [caseStudyFilter, setCaseStudyFilter] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -357,6 +360,13 @@ export function MindMap() {
               </span>
             </div>
             <button
+              onClick={() => setReadinessOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-emerald-500/50 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/25"
+            >
+              <Gauge className="h-4 w-4" />
+              <span className="hidden sm:inline">Readiness</span>
+            </button>
+            <button
               onClick={() => setExplorerOpen(true)}
               className="flex items-center gap-1.5 rounded-md border border-violet-500/50 bg-violet-500/15 px-2.5 py-1.5 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/25"
             >
@@ -533,6 +543,18 @@ export function MindMap() {
             setExplorerOpen(false);
           }}
           onClose={() => setExplorerOpen(false)}
+        />
+      )}
+
+      {/* ── Readiness dashboard overlay ────────────────────────────────── */}
+      {readinessOpen && (
+        <ReadinessDashboard
+          confidence={confidence}
+          onReview={(id) => {
+            setReadinessOpen(false);
+            setSelectedId(id);
+          }}
+          onClose={() => setReadinessOpen(false)}
         />
       )}
     </div>
