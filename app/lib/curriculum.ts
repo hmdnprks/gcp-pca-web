@@ -1807,6 +1807,240 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "compute-chooser",
+        name: "Compute Platform Chooser",
+        icon: "compute-chooser",
+        tagline: "GCE vs GKE vs Cloud Run vs Functions vs App Engine",
+        pairings: ["gce", "gke", "cloud-run", "cloud-functions", "app-engine"],
+        matrix: {
+          question: "Which compute platform fits the workload & operational model?",
+          columns: [
+            { key: "model", label: "Model" },
+            { key: "scale", label: "Scaling" },
+            { key: "best", label: "Best for" },
+            { key: "note", label: "Tradeoff / note" },
+          ],
+          rows: [
+            {
+              option: "Compute Engine (GCE)",
+              cells: { model: "IaaS VMs", scale: "MIG autoscaling", best: "Full OS control, licensed/legacy, GPUs, lift-and-shift", note: "You manage OS, patching & scaling config." },
+              pickWhen: "You need OS-level control, specific kernels/licenses, GPUs, or a straight lift-and-shift of existing VMs.",
+            },
+            {
+              option: "Google Kubernetes Engine (GKE)",
+              cells: { model: "Managed Kubernetes", scale: "HPA / cluster autoscaler", best: "Microservices, portability, complex orchestration", note: "K8s expertise needed; Autopilot removes node ops." },
+              pickWhen: "Container microservices needing fine-grained orchestration, service mesh, or multi-cloud portability.",
+            },
+            {
+              option: "Cloud Run",
+              cells: { model: "Serverless containers", scale: "Auto, scale-to-zero", best: "Stateless HTTP/event containers, APIs, web apps", note: "Request/event-driven; not for long-lived stateful daemons." },
+              pickWhen: "Any stateless container you want fully managed with scale-to-zero and no cluster to run.",
+            },
+            {
+              option: "Cloud Functions",
+              cells: { model: "FaaS (functions)", scale: "Auto, per-event", best: "Event-driven glue, single-purpose triggers", note: "Short-lived; cold starts; one job per function." },
+              pickWhen: "Lightweight event glue — respond to a Pub/Sub message, storage event or HTTP trigger with a small function.",
+            },
+            {
+              option: "App Engine",
+              cells: { model: "PaaS", scale: "Auto (incl. to zero, Std)", best: "Classic web/API apps, fast deploy", note: "Standard = sandboxed runtimes; Flex = containers on VMs." },
+              pickWhen: "A conventional web/API app you want to deploy by code with the platform handling infrastructure.",
+            },
+          ],
+          traps: [
+            "\"Container + no infra management + scale to zero\" → Cloud Run, not GKE. Reach for GKE only when you need real Kubernetes orchestration.",
+            "GPUs / specific OS / licensed software → Compute Engine; the serverless tiers can't give you kernel-level control.",
+            "Cloud Functions is single-purpose & short-lived — long-running or multi-endpoint services belong on Cloud Run / GKE.",
+            "GKE Autopilot vs Standard: Autopilot removes node management; use it unless you must control nodes.",
+          ],
+          keywords: [
+            "\"full OS control / GPUs / licensed / lift-and-shift\" → Compute Engine",
+            "\"container microservices / orchestration / portability\" → GKE",
+            "\"stateless container, managed, scale-to-zero\" → Cloud Run",
+            "\"event-driven trigger / glue\" → Cloud Functions",
+            "\"deploy code, classic web app, no infra\" → App Engine",
+          ],
+        },
+      },
+      {
+        id: "lb-chooser",
+        name: "Load Balancer Chooser",
+        icon: "lb-chooser",
+        tagline: "Global vs regional · L7 vs L4 · external vs internal",
+        pairings: ["cloud-lb", "cloud-cdn", "cloud-armor"],
+        matrix: {
+          question: "Which Cloud Load Balancer fits the traffic type & scope?",
+          columns: [
+            { key: "layer", label: "Layer" },
+            { key: "scope", label: "Scope" },
+            { key: "use", label: "Use for" },
+            { key: "note", label: "Note" },
+          ],
+          rows: [
+            {
+              option: "Global external Application LB",
+              cells: { layer: "L7 (HTTP/S)", scope: "Global anycast", use: "Internet-facing web/API across regions", note: "Single anycast IP; works with Cloud CDN & Cloud Armor." },
+              pickWhen: "Internet-facing HTTP(S) with users worldwide — one global IP, cross-region routing, CDN and WAF.",
+            },
+            {
+              option: "Regional external Application LB",
+              cells: { layer: "L7 (HTTP/S)", scope: "Single region", use: "Regional web/API, data-residency", note: "Region-scoped; use when traffic must stay in one region." },
+              pickWhen: "Internet-facing HTTP(S) that must stay within a single region (e.g. regulatory data residency).",
+            },
+            {
+              option: "External passthrough Network LB",
+              cells: { layer: "L4 (TCP/UDP)", scope: "Regional", use: "Non-HTTP TCP/UDP, preserve client IP", note: "Passthrough (no proxy); original source IP preserved." },
+              pickWhen: "L4 TCP/UDP internet traffic, or when you must preserve the original client source IP.",
+            },
+            {
+              option: "Internal Application LB",
+              cells: { layer: "L7 (HTTP/S)", scope: "Regional (internal)", use: "Internal microservice HTTP routing", note: "Private VIP inside the VPC; path/host routing." },
+              pickWhen: "HTTP(S) routing between internal microservices/tiers on a private address inside your VPC.",
+            },
+            {
+              option: "Internal passthrough Network LB",
+              cells: { layer: "L4 (TCP/UDP)", scope: "Regional (internal)", use: "Internal TCP/UDP, next-hop for appliances", note: "Private VIP; can be a route next-hop (e.g. NVA/firewall)." },
+              pickWhen: "Internal L4 TCP/UDP traffic, or as a next-hop VIP for HA network virtual appliances.",
+            },
+          ],
+          traps: [
+            "Two axes pick the LB: internet-facing vs internal, and L7 HTTP(S) vs L4 TCP/UDP. Nail both before choosing.",
+            "Cloud CDN and Cloud Armor attach to the (global) external Application LB — if the question mentions edge caching or WAF, that's the L7 Application LB.",
+            "\"Preserve client source IP\" / non-HTTP protocol → passthrough Network LB, not an Application (proxy) LB.",
+            "Global anycast single IP + multi-region backends → global external Application LB.",
+          ],
+          keywords: [
+            "\"global users, one IP, HTTP(S), CDN/WAF\" → Global external Application LB",
+            "\"internal HTTP microservices\" → Internal Application LB",
+            "\"TCP/UDP, preserve source IP\" → passthrough Network LB",
+            "\"next-hop for NVA / firewall appliance\" → Internal passthrough Network LB",
+            "\"data must stay in region\" → Regional external Application LB",
+          ],
+        },
+      },
+      {
+        id: "data-processing-chooser",
+        name: "Data Processing Chooser",
+        icon: "data-processing-chooser",
+        tagline: "Dataflow vs Dataproc vs Data Fusion vs Composer vs BigQuery",
+        pairings: ["dataflow", "dataproc", "datafusion", "composer", "bigquery"],
+        matrix: {
+          question: "Which data-processing or pipeline service fits the job?",
+          columns: [
+            { key: "type", label: "Type" },
+            { key: "best", label: "Best for" },
+            { key: "note", label: "Tradeoff / note" },
+          ],
+          rows: [
+            {
+              option: "Dataflow",
+              cells: { type: "Serverless Beam (batch + stream)", best: "New streaming/ETL pipelines, real-time", note: "Unified batch/stream, no cluster; handles windowing & late data." },
+              pickWhen: "Greenfield streaming or batch ETL where you want serverless and one model for both.",
+            },
+            {
+              option: "Dataproc",
+              cells: { type: "Managed Spark / Hadoop", best: "Lift-and-shift existing OSS big-data jobs", note: "Reuse Spark/Hadoop code & skills; use ephemeral clusters + GCS." },
+              pickWhen: "You already have Spark/Hadoop/Hive code and want to migrate it with minimal rewrite.",
+            },
+            {
+              option: "Cloud Data Fusion",
+              cells: { type: "Code-free visual ETL/ELT", best: "GUI pipeline building, 150+ connectors", note: "Runs on ephemeral Dataproc; good for analysts, built-in lineage." },
+              pickWhen: "Teams want drag-and-drop pipelines with many connectors and no code.",
+            },
+            {
+              option: "Cloud Composer",
+              cells: { type: "Managed Airflow orchestration", best: "Multi-step dependency scheduling across services", note: "Orchestrates (retries/backfills); doesn't do the heavy crunching itself." },
+              pickWhen: "You must orchestrate a dependency graph of jobs across services with scheduling & retries.",
+            },
+            {
+              option: "BigQuery (SQL / Dataform)",
+              cells: { type: "In-warehouse SQL ELT", best: "Transform data already in BigQuery", note: "Cheapest when data's in BQ; scheduled queries / Dataform for pipelines." },
+              pickWhen: "The data already lives in BigQuery and the transform can be expressed in SQL.",
+            },
+          ],
+          traps: [
+            "Existing Spark/Hadoop → Dataproc; greenfield serverless streaming → Dataflow. The word 'existing/migrate' vs 'new' usually decides it.",
+            "Composer orchestrates pipelines; it does not process the data — Dataflow/Dataproc/BigQuery do the crunching.",
+            "\"Code-free / visual / analysts\" → Data Fusion; \"unified batch + stream / Beam\" → Dataflow.",
+            "If data is already in BigQuery and it's just SQL, don't spin up Dataflow — use scheduled queries / Dataform.",
+          ],
+          keywords: [
+            "\"new serverless streaming, windowing, Beam\" → Dataflow",
+            "\"existing Spark/Hadoop, lift-and-shift\" → Dataproc",
+            "\"code-free visual ETL, connectors\" → Data Fusion",
+            "\"orchestrate multi-step DAG, retries/backfills\" → Cloud Composer",
+            "\"data already in BigQuery, SQL transform\" → BigQuery / Dataform",
+          ],
+        },
+      },
+      {
+        id: "storage-chooser",
+        name: "Storage & Database Chooser",
+        icon: "storage-chooser",
+        tagline: "Object · relational · global · document · wide-column · analytics · cache",
+        pairings: ["cloud-storage", "cloud-sql", "spanner", "firestore", "bigtable", "bigquery", "memorystore"],
+        matrix: {
+          question: "Which storage or database fits the data shape & access pattern?",
+          columns: [
+            { key: "model", label: "Data model" },
+            { key: "best", label: "Best for" },
+            { key: "note", label: "Key signal / note" },
+          ],
+          rows: [
+            {
+              option: "Cloud Storage",
+              cells: { model: "Object / blob", best: "Unstructured files, backups, data lake, static assets", note: "Not a database — no queries; tier with storage classes." },
+              pickWhen: "Unstructured objects (images, video, files, backups) or a data-lake landing zone.",
+            },
+            {
+              option: "Cloud SQL",
+              cells: { model: "Relational (OLTP)", best: "Regional MySQL/PostgreSQL/SQL Server apps", note: "Managed, regional; vertical scale + read replicas. Default OLTP." },
+              pickWhen: "A traditional relational transactional app that fits within a region.",
+            },
+            {
+              option: "Spanner",
+              cells: { model: "Relational, globally distributed", best: "Global scale + strong consistency, high availability", note: "Horizontal scale & 99.999% multi-region; pricier — only when you need global." },
+              pickWhen: "Relational data needing horizontal scale, global reach and strong consistency beyond one region.",
+            },
+            {
+              option: "Firestore",
+              cells: { model: "Document NoSQL", best: "Mobile/web apps, real-time sync, serverless", note: "Serverless, offline sync & live listeners; not for heavy analytics." },
+              pickWhen: "Semi-structured document data for mobile/web with real-time sync and simple scaling.",
+            },
+            {
+              option: "Bigtable",
+              cells: { model: "Wide-column NoSQL", best: "High-throughput time-series, IoT, ad-tech at huge scale", note: "Millisecond latency, petabyte scale; single-key/range access, no SQL joins." },
+              pickWhen: "Massive-write, low-latency key/time-series workloads (IoT, telemetry, ad-tech, monitoring).",
+            },
+            {
+              option: "BigQuery",
+              cells: { model: "Analytics warehouse (OLAP)", best: "SQL analytics, BI, ML on large datasets", note: "Serverless columnar; analytics not OLTP — don't use for transactional point-writes." },
+              pickWhen: "Analytical SQL / BI / reporting over large datasets (not transactional workloads).",
+            },
+            {
+              option: "Memorystore",
+              cells: { model: "In-memory cache", best: "Sub-ms caching, sessions, leaderboards", note: "Redis/Memcached; volatile — a cache in front of a database, not the source of truth." },
+              pickWhen: "You need a sub-millisecond cache or session store in front of a primary database.",
+            },
+          ],
+          traps: [
+            "Relational + fits one region → Cloud SQL; relational + global/horizontal scale + strong consistency → Spanner (only when you truly need global — it's costly).",
+            "Analytics (OLAP) → BigQuery; transactional point reads/writes (OLTP) → Cloud SQL/Spanner. Never use BigQuery as an OLTP store.",
+            "High-throughput NoSQL at massive scale / time-series → Bigtable; app-facing document data with real-time sync → Firestore. Don't confuse the two NoSQL options.",
+            "Cloud Storage is object storage, not a queryable database — if the question needs queries/indexes, it's the wrong answer.",
+          ],
+          keywords: [
+            "\"unstructured files / backups / data lake\" → Cloud Storage",
+            "\"regional relational OLTP (MySQL/Postgres)\" → Cloud SQL",
+            "\"global, horizontally-scalable, strongly-consistent relational\" → Spanner",
+            "\"mobile/web app, real-time sync, document\" → Firestore",
+            "\"time-series / IoT / huge write throughput, low latency\" → Bigtable",
+            "\"data warehouse, SQL analytics/BI\" → BigQuery",
+            "\"sub-ms cache / session store\" → Memorystore",
+          ],
+        },
+      },
     ],
   },
 ];
