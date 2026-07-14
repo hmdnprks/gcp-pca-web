@@ -30,6 +30,7 @@ const ACCENT: Record<string, { text: string; bar: string; chip: string }> = {
   rose: { text: "text-rose-400", bar: "bg-rose-500", chip: "bg-rose-500/10 text-rose-300 border-rose-500/30" },
   amber: { text: "text-amber-400", bar: "bg-amber-500", chip: "bg-amber-500/10 text-amber-300 border-amber-500/30" },
   cyan: { text: "text-cyan-400", bar: "bg-cyan-500", chip: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
+  fuchsia: { text: "text-fuchsia-400", bar: "bg-fuchsia-500", chip: "bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/30" },
 };
 
 // Bidirectional pairing adjacency for hover highlighting.
@@ -109,13 +110,22 @@ function ServiceNode({
             <h4 className="truncate text-sm font-semibold text-zinc-100">
               {service.name}
             </h4>
-            {!service.detail && (
+            {service.matrix ? (
               <span
-                title="Structural placeholder — no deep-dive yet"
-                className="shrink-0 rounded border border-zinc-700 px-1 text-[9px] font-medium uppercase tracking-wide text-zinc-500"
+                title="Decision guide — comparison matrix"
+                className="shrink-0 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1 text-[9px] font-medium uppercase tracking-wide text-fuchsia-300"
               >
-                stub
+                guide
               </span>
+            ) : (
+              !service.detail && (
+                <span
+                  title="Structural placeholder — no deep-dive yet"
+                  className="shrink-0 rounded border border-zinc-700 px-1 text-[9px] font-medium uppercase tracking-wide text-zinc-500"
+                >
+                  stub
+                </span>
+              )
             )}
           </div>
           <p className="truncate text-xs text-zinc-400">{service.tagline}</p>
@@ -223,6 +233,10 @@ export function MindMap() {
         svc.tagline,
         ...(svc.detail?.keywords ?? []),
         ...(svc.detail?.caseStudies ?? []),
+        svc.matrix?.question ?? "",
+        ...(svc.matrix?.rows.map((r) => r.option) ?? []),
+        ...(svc.matrix?.keywords ?? []),
+        ...(svc.matrix?.traps ?? []),
       ]
         .join(" ")
         .toLowerCase();

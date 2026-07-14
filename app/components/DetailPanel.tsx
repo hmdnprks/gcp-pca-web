@@ -3,16 +3,19 @@
 import { useEffect } from "react";
 import {
   Compass,
+  HelpCircle,
   Info,
   Link2,
+  ListChecks,
   ScrollText,
   ShieldCheck,
+  Table2,
   Tag,
   TriangleAlert,
   Wrench,
   X,
 } from "lucide-react";
-import type { Confidence, FlatService } from "../lib/curriculum";
+import type { Confidence, DecisionMatrix, FlatService } from "../lib/curriculum";
 import { SERVICE_INDEX } from "../lib/curriculum";
 import { iconFor } from "../lib/icons";
 import { ConfidencePicker } from "./ConfidencePicker";
@@ -55,6 +58,138 @@ function Section({
   );
 }
 
+function CaseStudyTags({ items }: { items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="space-y-2">
+      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <Tag className="h-4 w-4 text-violet-400" />
+        Case Study Tags
+      </h3>
+      <div className="flex flex-wrap gap-2">
+        {items.map((c) => (
+          <span
+            key={c}
+            className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300"
+          >
+            {c}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MatrixView({ matrix }: { matrix: DecisionMatrix }) {
+  return (
+    <div className="space-y-6">
+      {/* The decision */}
+      <div className="rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 p-3">
+        <div className="flex items-start gap-2">
+          <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" />
+          <p className="text-sm font-medium text-fuchsia-100">
+            {matrix.question}
+          </p>
+        </div>
+      </div>
+
+      {/* Comparison table */}
+      <section className="space-y-2">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <Table2 className="h-4 w-4 text-fuchsia-400" />
+          Comparison
+        </h3>
+        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead>
+              <tr className="bg-zinc-900">
+                <th className="sticky left-0 z-10 bg-zinc-900 px-3 py-2 font-semibold text-zinc-300">
+                  Option
+                </th>
+                {matrix.columns.map((c) => (
+                  <th
+                    key={c.key}
+                    className="whitespace-nowrap px-3 py-2 font-semibold text-zinc-400"
+                  >
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrix.rows.map((r) => (
+                <tr key={r.option} className="border-t border-zinc-800 align-top">
+                  <th
+                    scope="row"
+                    className="sticky left-0 z-10 whitespace-nowrap bg-zinc-950 px-3 py-2 text-left font-semibold text-fuchsia-300"
+                  >
+                    {r.option}
+                  </th>
+                  {matrix.columns.map((c) => (
+                    <td key={c.key} className="px-3 py-2 text-zinc-300">
+                      {r.cells[c.key] ?? "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* When to choose */}
+      <section className="space-y-2">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <ListChecks className="h-4 w-4 text-emerald-400" />
+          When to choose
+        </h3>
+        <ul className="space-y-2">
+          {matrix.rows.map((r) => (
+            <li
+              key={r.option}
+              className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3"
+            >
+              <p className="text-sm font-semibold text-fuchsia-300">{r.option}</p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                {r.pickWhen}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <Section
+        icon={TriangleAlert}
+        title="Traps & Gotchas"
+        accent="text-red-400"
+        items={matrix.traps}
+      />
+
+      {/* Trigger keywords */}
+      {matrix.keywords.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <ScrollText className="h-4 w-4 text-fuchsia-400" />
+            Trigger Keywords → Answer
+          </h3>
+          <ul className="space-y-1.5">
+            {matrix.keywords.map((k, i) => (
+              <li
+                key={i}
+                className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1.5 text-xs font-medium text-fuchsia-200"
+              >
+                {k}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <CaseStudyTags items={matrix.caseStudies} />
+    </div>
+  );
+}
+
 export function DetailPanel({
   service,
   confidence,
@@ -73,6 +208,7 @@ export function DetailPanel({
   }, [service, onClose]);
 
   const open = service !== null;
+  const isMatrix = !!service?.matrix;
   const Icon = service ? iconFor(service.icon) : Info;
   const pairings = (service?.pairings ?? [])
     .map((id) => SERVICE_INDEX[id])
@@ -94,9 +230,9 @@ export function DetailPanel({
         role="dialog"
         aria-modal="true"
         aria-label={service ? `${service.name} details` : "Service details"}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out sm:w-[30rem] ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out ${
+          isMatrix ? "max-w-3xl sm:w-[46rem]" : "max-w-md sm:w-[30rem]"
+        } ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {service && (
           <>
@@ -135,7 +271,9 @@ export function DetailPanel({
             </div>
 
             <div className="flex-1 space-y-6 overflow-y-auto p-5">
-              {service.detail ? (
+              {service.matrix ? (
+                <MatrixView matrix={service.matrix} />
+              ) : service.detail ? (
                 <>
                   <Section
                     icon={Compass}
@@ -184,25 +322,7 @@ export function DetailPanel({
                     items={service.detail.antipatterns}
                   />
 
-                  {/* Case studies */}
-                  {service.detail.caseStudies.length > 0 && (
-                    <section className="space-y-2">
-                      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        <Tag className="h-4 w-4 text-violet-400" />
-                        Case Study Tags
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {service.detail.caseStudies.map((c) => (
-                          <span
-                            key={c}
-                            className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300"
-                          >
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </section>
-                  )}
+                  <CaseStudyTags items={service.detail.caseStudies} />
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 p-8 text-center">

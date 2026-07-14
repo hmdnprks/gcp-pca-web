@@ -18,6 +18,38 @@ export interface ServiceDetail {
   caseStudies: string[];
 }
 
+/** A single comparison/decision column header. */
+export interface MatrixColumn {
+  key: string;
+  label: string;
+}
+
+/** One option (row) being compared in a decision matrix. */
+export interface MatrixRow {
+  /** The choice, e.g. "HA VPN". */
+  option: string;
+  /** Attribute values keyed by MatrixColumn.key. */
+  cells: Record<string, string>;
+  /** Plain-language "choose this when…" summary. */
+  pickWhen: string;
+}
+
+/**
+ * A cross-cutting decision guide: "given constraints, which option?".
+ * Rendered as a comparison table instead of the standard 6-section detail.
+ */
+export interface DecisionMatrix {
+  /** The decision being made. */
+  question: string;
+  columns: MatrixColumn[];
+  rows: MatrixRow[];
+  /** Common exam traps / gotchas. */
+  traps: string[];
+  /** Trigger phrase → answer hints. */
+  keywords: string[];
+  caseStudies: string[];
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -26,8 +58,11 @@ export interface Service {
   tagline: string;
   /** IDs of frequently paired services (dependency edges / highlighting). */
   pairings?: string[];
-  /** Undefined => a structural placeholder awaiting deep-dive content. */
+  /** Full deep-dive content for a service node. */
   detail?: ServiceDetail;
+  /** Present on decision-guide nodes instead of `detail`. */
+  matrix?: DecisionMatrix;
+  /** A node with neither detail nor matrix is a structural placeholder. */
 }
 
 export interface Pillar {
@@ -1354,6 +1389,283 @@ export const CURRICULUM: Pillar[] = [
             "Pure orchestration of existing jobs → Cloud Composer.",
           ],
           caseStudies: ["TerramEarth"],
+        },
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 7. DECISION GUIDES (cross-cutting "which one when?" comparison matrices)
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: "decision-guides",
+    name: "Decision Guides",
+    icon: "decision-guides",
+    accent: "fuchsia",
+    services: [
+      {
+        id: "hybrid-connectivity",
+        name: "On-prem ↔ VPC Connectivity",
+        icon: "hybrid-connectivity",
+        tagline: "VPN vs Interconnect vs Peering — which link?",
+        pairings: ["cloud-interconnect", "vpc"],
+        matrix: {
+          question:
+            "How should I connect an on-premises network to a Google Cloud VPC?",
+          columns: [
+            { key: "enc", label: "Encrypted?" },
+            { key: "bw", label: "Bandwidth" },
+            { key: "sla", label: "SLA" },
+            { key: "rfc", label: "Private RFC1918" },
+            { key: "setup", label: "Setup speed" },
+          ],
+          rows: [
+            {
+              option: "HA VPN",
+              cells: {
+                enc: "✅ IPsec",
+                bw: "≤ ~3 Gbps / tunnel",
+                sla: "99.99%",
+                rfc: "✅",
+                setup: "Fast (hours)",
+              },
+              pickWhen:
+                "Encrypted connectivity over the public internet, quick to deploy, moderate bandwidth — or as an encrypted backup to Interconnect.",
+            },
+            {
+              option: "Classic VPN",
+              cells: {
+                enc: "✅ IPsec",
+                bw: "~1.5–3 Gbps",
+                sla: "99.9%",
+                rfc: "✅",
+                setup: "Fast (hours)",
+              },
+              pickWhen:
+                "Legacy single-tunnel VPN. Prefer HA VPN for anything new — it has the higher 99.99% SLA.",
+            },
+            {
+              option: "Partner Interconnect",
+              cells: {
+                enc: "❌ (private)",
+                bw: "50 Mbps – 50 Gbps",
+                sla: "99.9% / 99.99%",
+                rfc: "✅",
+                setup: "Medium (via provider)",
+              },
+              pickWhen:
+                "Private, higher bandwidth than VPN, but you have NO presence in a Google colocation facility — you connect through a supported service provider.",
+            },
+            {
+              option: "Dedicated Interconnect",
+              cells: {
+                enc: "❌ (add MACsec)",
+                bw: "10 / 100 Gbps links",
+                sla: "99.9% / 99.99%",
+                rfc: "✅",
+                setup: "Slow (weeks, colo)",
+              },
+              pickWhen:
+                "Highest, most consistent bandwidth and lowest latency to on-prem, and you CAN meet Google in a colocation facility.",
+            },
+            {
+              option: "Cross-Cloud Interconnect",
+              cells: {
+                enc: "❌ (MACsec option)",
+                bw: "10 / 100 Gbps",
+                sla: "99.9% / 99.99%",
+                rfc: "✅ (to other cloud)",
+                setup: "Medium–Slow",
+              },
+              pickWhen:
+                "Dedicated private link between Google and another cloud (AWS / Azure / OCI) for multicloud connectivity.",
+            },
+          ],
+          traps: [
+            "Direct/Carrier Peering does NOT give private RFC1918 access to your VPC — it only reaches Google/Workspace public APIs. Never pick peering for on-prem ↔ VPC traffic.",
+            "Interconnect is private but NOT encrypted by default. If the requirement says 'encrypted', use VPN (or add MACsec / application-layer encryption).",
+            "HA VPN only reaches 99.99% when configured with two tunnels to two peer devices (redundant).",
+          ],
+          keywords: [
+            "\"encrypted\" / \"over the internet\" → VPN",
+            "\"private, high & consistent bandwidth, low latency\" → Dedicated Interconnect",
+            "\"no colo presence\" but want private → Partner Interconnect",
+            "\"quick to set up\" / \"in a few days\" → HA VPN",
+            "\"to another cloud\" → Cross-Cloud Interconnect",
+          ],
+          caseStudies: ["EHR Healthcare", "TerramEarth"],
+        },
+      },
+      {
+        id: "vpc-connectivity",
+        name: "VPC ↔ VPC Connectivity",
+        icon: "vpc-connectivity",
+        tagline: "Peering vs Shared VPC vs NCC vs PSC",
+        pairings: ["vpc", "vpc-sc"],
+        matrix: {
+          question: "How should I connect two (or many) VPC networks?",
+          columns: [
+            { key: "trans", label: "Transitive routing" },
+            { key: "scope", label: "Cross-project / org" },
+            { key: "enc", label: "Encryption" },
+            { key: "scale", label: "Scale / admin" },
+          ],
+          rows: [
+            {
+              option: "VPC Peering",
+              cells: {
+                trans: "❌ non-transitive",
+                scope: "✅ project & org",
+                enc: "Internal (Google network)",
+                scale: "Point-to-point, no central mgmt",
+              },
+              pickWhen:
+                "Directly connect a few VPCs privately at full internal bandwidth. Simple and low cost — but non-transitive and CIDRs must not overlap.",
+            },
+            {
+              option: "Shared VPC",
+              cells: {
+                trans: "n/a (one network)",
+                scope: "✅ host → service (same org)",
+                enc: "Internal (Google network)",
+                scale: "Centralized network admin",
+              },
+              pickWhen:
+                "One team owns networking and multiple projects share subnets in a single VPC. Central control with IAM separation, within one organization.",
+            },
+            {
+              option: "HA VPN (VPC-to-VPC)",
+              cells: {
+                trans: "❌ (routes exchanged)",
+                scope: "✅ even across orgs",
+                enc: "✅ IPsec",
+                scale: "Tunnels",
+              },
+              pickWhen:
+                "Connect VPCs across organizations, or where you specifically want encryption / route control between them.",
+            },
+            {
+              option: "Network Connectivity Center",
+              cells: {
+                trans: "✅ hub-and-spoke",
+                scope: "✅ project & org",
+                enc: "Depends on spoke type",
+                scale: "Many VPCs + hybrid, centrally",
+              },
+              pickWhen:
+                "Connect MANY VPCs (and hybrid links) with transitive connectivity through a central hub.",
+            },
+            {
+              option: "Private Service Connect",
+              cells: {
+                trans: "n/a",
+                scope: "✅ consumer → producer",
+                enc: "Private",
+                scale: "Per-service endpoints",
+              },
+              pickWhen:
+                "Consume one published service across VPCs privately, without full network connectivity or route/CIDR coupling.",
+            },
+          ],
+          traps: [
+            "VPC Peering is NON-transitive: if A↔B and B↔C are peered, A cannot reach C through B. Use Network Connectivity Center for transitive hub-and-spoke.",
+            "Peered VPCs cannot have overlapping IP (CIDR) ranges.",
+            "Shared VPC is within a single organization; to join VPCs across organizations use HA VPN or NCC.",
+          ],
+          keywords: [
+            "\"many VPCs\" / \"transitive\" / \"hub-and-spoke\" → Network Connectivity Center",
+            "\"central network team\" / \"share subnets\" → Shared VPC",
+            "\"a few VPCs, private full-bandwidth\" → VPC Peering",
+            "\"across organizations\" / \"encrypted\" → HA VPN",
+            "\"privately expose one service\" → Private Service Connect",
+          ],
+          caseStudies: ["EHR Healthcare", "TerramEarth"],
+        },
+      },
+      {
+        id: "migration-path",
+        name: "Migration Path Selector",
+        icon: "migration-path",
+        tagline: "DMS vs M2VM vs Transfer vs Appliance",
+        pairings: ["dms", "cloud-storage", "gce"],
+        matrix: {
+          question: "Which migration service / path fits this workload?",
+          columns: [
+            { key: "st", label: "Source → Target" },
+            { key: "down", label: "Downtime" },
+            { key: "type", label: "Type" },
+            { key: "conn", label: "Connectivity needed" },
+          ],
+          rows: [
+            {
+              option: "Database Migration Service",
+              cells: {
+                st: "On-prem/other-cloud DB → Cloud SQL / AlloyDB / Spanner",
+                down: "Near-zero (CDC)",
+                type: "Homogeneous & heterogeneous",
+                conn: "Private (VPC peering / PSC / reverse-SSH) or IP allowlist",
+              },
+              pickWhen:
+                "Migrating a live relational database with minimal downtime via continuous replication.",
+            },
+            {
+              option: "Migrate to Virtual Machines",
+              cells: {
+                st: "On-prem / AWS / Azure VMs → Compute Engine",
+                down: "Minimal (replicate then cut over)",
+                type: "Lift-and-shift servers",
+                conn: "VPN / Interconnect",
+              },
+              pickWhen:
+                "Rehosting existing servers/VMs onto Compute Engine without re-architecting them.",
+            },
+            {
+              option: "Storage Transfer Service",
+              cells: {
+                st: "On-prem / other-cloud object & file data → Cloud Storage",
+                down: "n/a (data copy)",
+                type: "Large-scale online transfer",
+                conn: "Over network (internet / VPN / Interconnect)",
+              },
+              pickWhen:
+                "Moving large datasets online to GCS on a schedule — TB to PB over the wire when bandwidth is adequate.",
+            },
+            {
+              option: "Transfer Appliance",
+              cells: {
+                st: "On-prem bulk data → Cloud Storage",
+                down: "n/a",
+                type: "Offline (physical shipment)",
+                conn: "NONE — ship a device",
+              },
+              pickWhen:
+                "Petabyte-scale data or poor bandwidth where an online transfer would take too long — ship a physical appliance.",
+            },
+            {
+              option: "BigQuery Data Transfer Service",
+              cells: {
+                st: "SaaS / other warehouses → BigQuery",
+                down: "n/a",
+                type: "Scheduled analytics ingestion",
+                conn: "Managed",
+              },
+              pickWhen:
+                "Recurring, scheduled loads of data into BigQuery from SaaS apps or other clouds.",
+            },
+          ],
+          traps: [
+            "Huge data + limited bandwidth → Transfer Appliance (offline). Don't pick an online transfer that would take months.",
+            "Match the tool to the object: DMS for databases (keeps them running), Storage Transfer / Transfer Appliance for object & file data, Migrate to VMs for whole servers.",
+            "\"Near-zero downtime\" + relational DB → Database Migration Service (CDC), not a dump-and-restore.",
+          ],
+          keywords: [
+            "\"minimal downtime\" + database → DMS",
+            "\"rehost / lift-and-shift servers\" → Migrate to VMs",
+            "\"petabytes\" / \"not enough bandwidth\" / \"offline\" → Transfer Appliance",
+            "\"large online dataset to GCS\" / \"scheduled\" → Storage Transfer Service",
+            "\"load into BigQuery on a schedule\" → BigQuery Data Transfer",
+          ],
+          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
     ],

@@ -2,6 +2,7 @@ import {
   Activity,
   AppWindow,
   Archive,
+  ArrowRightLeft,
   BarChart3,
   Blocks,
   BrainCircuit,
@@ -24,6 +25,7 @@ import {
   Network,
   Radio,
   Rocket,
+  Route,
   Router,
   ScrollText,
   Server,
@@ -101,6 +103,12 @@ const ICONS: Record<string, LucideIcon> = {
   "vertex-ai": Sparkles,
   composer: Wind,
   datafusion: Combine,
+
+  // Decision guides
+  "decision-guides": Route,
+  "hybrid-connectivity": Cable,
+  "vpc-connectivity": Waypoints,
+  "migration-path": ArrowRightLeft,
 
   // Generic
   cloud: Cloud,
