@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  GraduationCap,
   Link2,
   RotateCcw,
   Search,
@@ -15,6 +16,7 @@ import { CONFIDENCE_STYLES, UNSET_NODE } from "../lib/confidence";
 import { iconFor } from "../lib/icons";
 import { ConfidencePicker } from "./ConfidencePicker";
 import { DetailPanel } from "./DetailPanel";
+import { QuizMode } from "./QuizMode";
 
 type ConfidenceMap = Record<string, Confidence>;
 type FilterValue = "all" | Confidence | "unset";
@@ -162,6 +164,7 @@ export function MindMap() {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Load persisted state after mount (avoids SSR hydration mismatch).
@@ -346,6 +349,13 @@ export function MindMap() {
               </span>
             </div>
             <button
+              onClick={() => setQuizOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-fuchsia-500/50 bg-fuchsia-500/15 px-2.5 py-1.5 text-xs font-semibold text-fuchsia-200 transition-colors hover:bg-fuchsia-500/25"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Quiz
+            </button>
+            <button
               onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(CURRICULUM.map((p) => p.id)))}
               className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800"
             >
@@ -369,7 +379,7 @@ export function MindMap() {
           <span className="rounded-full bg-gradient-to-r from-sky-500/20 to-violet-500/20 px-3 py-1 font-semibold text-zinc-200 ring-1 ring-inset ring-zinc-700">
             GCP PCA Curriculum
           </span>
-          <span className="text-zinc-600">→ 6 pillars · click a node to deep-dive</span>
+          <span className="text-zinc-600">→ 6 pillars + decision guides · click a node to deep-dive</span>
         </div>
 
         <div className="flex min-h-full gap-4 p-4 sm:p-6">
@@ -471,6 +481,16 @@ export function MindMap() {
         onClose={() => setSelectedId(null)}
         onNavigate={(id) => setSelectedId(id)}
       />
+
+      {/* ── Quiz overlay ───────────────────────────────────────────────── */}
+      {quizOpen && (
+        <QuizMode
+          confidence={confidence}
+          onSetConfidence={setServiceConfidence}
+          onReview={(id) => setSelectedId(id)}
+          onClose={() => setQuizOpen(false)}
+        />
+      )}
     </div>
   );
 }
