@@ -115,6 +115,9 @@ export const SERVICE_DOMAINS: Record<string, string[]> = {
   "hybrid-connectivity": ["d1", "d2"],
   "vpc-connectivity": ["d1", "d2"],
   "migration-path": ["d1", "d5"],
+  "dr-strategy": ["d1", "d4"],
+  "cost-optimization": ["d1", "d4"],
+  "ha-patterns": ["d1", "d6"],
 };
 
 export function domainsForService(serviceId: string): string[] {

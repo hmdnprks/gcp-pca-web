@@ -11,6 +11,7 @@ import {
   Cloud,
   Combine,
   Container,
+  CopyCheck,
   Cpu,
   Database,
   DatabaseZap,
@@ -20,8 +21,10 @@ import {
   KeyRound,
   KeySquare,
   Layers,
+  LifeBuoy,
   LineChart,
   Lock,
+  PiggyBank,
   Network,
   Radio,
   Rocket,
@@ -109,6 +112,9 @@ const ICONS: Record<string, LucideIcon> = {
   "hybrid-connectivity": Cable,
   "vpc-connectivity": Waypoints,
   "migration-path": ArrowRightLeft,
+  "dr-strategy": LifeBuoy,
+  "cost-optimization": PiggyBank,
+  "ha-patterns": CopyCheck,
 
   // Generic
   cloud: Cloud,

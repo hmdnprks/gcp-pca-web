@@ -1614,6 +1614,163 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "dr-strategy",
+        name: "DR Strategy (RTO / RPO)",
+        icon: "dr-strategy",
+        tagline: "Backup → pilot light → warm → hot multi-region",
+        pairings: ["cloud-storage", "cloud-sql", "spanner"],
+        matrix: {
+          question:
+            "Which disaster-recovery strategy fits the required RTO/RPO and budget?",
+          columns: [
+            { key: "rto", label: "RTO" },
+            { key: "rpo", label: "RPO" },
+            { key: "cost", label: "Cost" },
+            { key: "cx", label: "Complexity" },
+          ],
+          rows: [
+            {
+              option: "Backup & Restore",
+              cells: { rto: "Hours–days", rpo: "Hours (last backup)", cost: "$", cx: "Low" },
+              pickWhen:
+                "Non-critical workloads that tolerate longer downtime & data loss. Cheapest — restore from backups/snapshots into a new environment.",
+            },
+            {
+              option: "Cold standby (Pilot Light)",
+              cells: { rto: "10s of min–hours", rpo: "Minutes", cost: "$$", cx: "Medium" },
+              pickWhen:
+                "Core services pre-provisioned but scaled down/off in a second region; scale up on failover. Balances cost vs recovery time.",
+            },
+            {
+              option: "Warm standby",
+              cells: { rto: "Minutes", rpo: "Seconds–minutes", cost: "$$$", cx: "Medium–High" },
+              pickWhen:
+                "A scaled-down but always-running copy in a second region; scale it up on failover for faster recovery.",
+            },
+            {
+              option: "Hot / Multi-region active-active",
+              cells: { rto: "~Zero (seconds)", rpo: "~Zero", cost: "$$$$", cx: "High" },
+              pickWhen:
+                "Mission-critical, near-zero downtime & data loss; fully redundant and active in multiple regions (e.g. Spanner multi-region + global LB).",
+            },
+          ],
+          traps: [
+            "RTO = how fast you recover; RPO = how much data you can lose. The requirement wording picks the tier — don't jump to active-active if RTO is 'a few hours'.",
+            "Multi-region active-active is the most expensive; only choose it when near-zero RTO/RPO is explicitly required.",
+            "Backups alone give a poor RPO (since the last backup) — pair with frequent snapshots / PITR when RPO must be tight.",
+          ],
+          keywords: [
+            "\"tolerate hours of downtime\" / cheapest → Backup & Restore",
+            "\"scaled-down copy, scale up on failover\" → Pilot Light / Warm standby",
+            "\"near-zero RTO/RPO\" / \"mission critical\" → Multi-region active-active",
+            "\"RTO\" = recovery time · \"RPO\" = data-loss window",
+          ],
+        },
+      },
+      {
+        id: "cost-optimization",
+        name: "Cost Optimization Levers",
+        icon: "cost-optimization",
+        tagline: "CUD vs SUD vs Spot vs autoscaling vs tiers",
+        pairings: ["gce", "cloud-storage", "bigquery"],
+        matrix: {
+          question: "Which cost-optimization lever applies to this workload?",
+          columns: [
+            { key: "mech", label: "Mechanism" },
+            { key: "best", label: "Best for" },
+            { key: "save", label: "Savings" },
+            { key: "note", label: "Tradeoff / note" },
+          ],
+          rows: [
+            {
+              option: "Committed Use Discounts (CUD)",
+              cells: { mech: "1 or 3-yr resource/spend commitment", best: "Steady, predictable baseline load", save: "up to ~57–70%", note: "Commitment risk if usage drops." },
+              pickWhen: "You have a stable, predictable baseline of usage you'll keep for 1–3 years.",
+            },
+            {
+              option: "Sustained Use Discounts (SUD)",
+              cells: { mech: "Automatic for long-running VMs", best: "VMs running most of the month", save: "up to ~30%", note: "Automatic, no commitment (Compute Engine)." },
+              pickWhen: "Compute Engine workloads run a large share of the month — the discount applies automatically.",
+            },
+            {
+              option: "Spot / Preemptible VMs",
+              cells: { mech: "Preemptible spare capacity", best: "Fault-tolerant, stateless batch", save: "~60–91%", note: "Reclaimable with ~30s notice." },
+              pickWhen: "Batch / fault-tolerant, stateless work that can be interrupted and retried.",
+            },
+            {
+              option: "Rightsizing & Autoscaling",
+              cells: { mech: "Match capacity to demand", best: "Variable / over-provisioned workloads", save: "Varies", note: "Use recommendations + MIG/HPA; scale to zero (Cloud Run)." },
+              pickWhen: "Load is variable or resources are over-provisioned — scale with demand instead of peak.",
+            },
+            {
+              option: "Storage classes & lifecycle",
+              cells: { mech: "Nearline/Coldline/Archive + rules", best: "Infrequently accessed data", save: "Large on cold data", note: "Retrieval & early-delete fees on colder tiers." },
+              pickWhen: "Data is accessed rarely — auto-tier it down with lifecycle rules.",
+            },
+            {
+              option: "BigQuery pricing model",
+              cells: { mech: "On-demand vs capacity (slots)", best: "Predictable analytics spend", save: "Varies", note: "Partition/cluster + avoid SELECT * to cut bytes scanned." },
+              pickWhen: "Analytics cost is high/variable — reserve slots and reduce bytes scanned.",
+            },
+          ],
+          traps: [
+            "CUDs require an explicit 1/3-yr commitment; SUDs are automatic for sustained Compute Engine usage — don't confuse them.",
+            "Spot VMs can be reclaimed with ~30s notice — never use for stateful or latency-critical serving.",
+            "Cold storage classes have retrieval + early-deletion costs; they're the wrong choice for frequently-read data.",
+          ],
+          keywords: [
+            "\"steady predictable baseline\" → Committed Use Discounts",
+            "\"fault-tolerant batch, cheapest compute\" → Spot / Preemptible",
+            "\"infrequently accessed data\" → Nearline/Coldline/Archive + lifecycle",
+            "\"variable load\" → autoscaling / rightsizing / scale-to-zero",
+          ],
+        },
+      },
+      {
+        id: "ha-patterns",
+        name: "HA / Deployment Scope",
+        icon: "ha-patterns",
+        tagline: "Zonal vs regional vs multi-region",
+        pairings: ["cloud-lb", "gke", "spanner"],
+        matrix: {
+          question: "What deployment scope meets the availability requirement?",
+          columns: [
+            { key: "fail", label: "Failure it survives" },
+            { key: "sla", label: "Typical SLA" },
+            { key: "cost", label: "Cost" },
+            { key: "ex", label: "Examples" },
+          ],
+          rows: [
+            {
+              option: "Zonal",
+              cells: { fail: "Instance failure (within a zone)", sla: "Lowest", cost: "$", ex: "Single-zone VM / GKE — no zone redundancy." },
+              pickWhen: "Dev/test or non-critical workloads where a zone outage is acceptable.",
+            },
+            {
+              option: "Regional (multi-zone)",
+              cells: { fail: "A zone outage", sla: "~99.9–99.99%", cost: "$$", ex: "Regional MIG, regional GKE, regional Cloud SQL HA." },
+              pickWhen: "Production workloads that must survive a single-zone failure with automatic failover.",
+            },
+            {
+              option: "Multi-region",
+              cells: { fail: "A full region outage", sla: "up to 99.999%", cost: "$$$$", ex: "Global LB, Spanner multi-region, multi-region GCS/BigQuery." },
+              pickWhen: "Mission-critical workloads that must survive an entire region going down.",
+            },
+          ],
+          traps: [
+            "A single-zone resource has no HA — a zone outage takes it down. Use regional for zone-fault tolerance.",
+            "Only multi-region survives a full region outage, and it's the priciest — match it to the stated SLA.",
+            "Regional managed services (Cloud SQL HA, regional MIG) give automatic zone failover; multi-region needs explicit design.",
+          ],
+          keywords: [
+            "\"survive a zone failure\" → regional / multi-zone",
+            "\"survive a region failure\" / 99.999% → multi-region",
+            "\"single zone\" = no HA",
+            "\"global single anycast IP\" → global external Application LB",
+          ],
+        },
+      },
     ],
   },
 ];
