@@ -30,6 +30,7 @@ import {
   Rocket,
   Route,
   Router,
+  ScanEye,
   ScrollText,
   Server,
   Settings2,
@@ -104,6 +105,7 @@ const ICONS: Record<string, LucideIcon> = {
   dataproc: Blocks,
   looker: LineChart,
   "vertex-ai": Sparkles,
+  "ai-apis": ScanEye,
   composer: Wind,
   datafusion: Combine,
 

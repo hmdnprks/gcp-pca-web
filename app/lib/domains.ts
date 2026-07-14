@@ -109,6 +109,7 @@ export const SERVICE_DOMAINS: Record<string, string[]> = {
   dataproc: ["d1", "d2"],
   looker: ["d1", "d4"],
   "vertex-ai": ["d1", "d2"],
+  "ai-apis": ["d1", "d2"],
   composer: ["d2", "d5"],
   datafusion: ["d1", "d2"],
   // Decision guides
