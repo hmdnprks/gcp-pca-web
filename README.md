@@ -10,7 +10,9 @@ Built with **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, and *
 - **Confidence heatmap** — set every service to **Weak** (red), **Reviewing** (amber), or **Mastered** (green). Node tint + per-pillar mastery bars + a global tally let you spot gaps at a glance.
 - **Dependency edges** — hovering a service highlights its frequently-paired services (e.g. Pub/Sub ↔ Dataflow, IAP ↔ Cloud Run / Compute Engine) and dims the rest.
 - **Search & filter** — live search over service names, taglines, exam keywords and case studies (press `/` to focus), plus filter chips to isolate confidence states (e.g. "show only Weak").
-- **Deep-dive panel** — click a node for a slide-out organized by PCA exam domains: Design & Architecture, Security & Compliance, Operations & Reliability, Exam Keywords, Anti-patterns, and Case Study tags (EHR Healthcare, Mountkirk Games, Helicopter Racing League, TerramEarth).
+- **Deep-dive panel** — click a node for a slide-out organized by PCA exam domains: Design & Architecture, Security & Compliance, Operations & Reliability, Exam Keywords, Anti-patterns, and Case Study tags (the official v6.1 studies: Altostrat Media, Cymbal Retail, EHR Healthcare, KnightMotives Automotive).
+- **Case Study Explorer** — browse the four official PCA case studies (business context, requirements, and the GCP services/decisions each drives) and filter the whole map to a single case study.
+- **Scenario quiz** — decision-style questions that update the confidence heatmap (wrong → Weak, correct → Reviewing) with review links.
 - **Persistent progress** — confidence levels and expanded/collapsed state are saved to `localStorage`, so study progress survives refreshes.
 
 All **37 services across all 6 pillars are fully populated** with exam-grade content.

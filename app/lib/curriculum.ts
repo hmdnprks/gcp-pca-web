@@ -14,8 +14,7 @@ export interface ServiceDetail {
   keywords: string[];
   /** Anti-patterns — explicit conditions where this is the WRONG choice. */
   antipatterns: string[];
-  /** Official PCA case studies that heavily feature this service. */
-  caseStudies: string[];
+  // Case-study tags are derived from lib/caseStudies.ts (single source of truth).
 }
 
 /** A single comparison/decision column header. */
@@ -47,7 +46,6 @@ export interface DecisionMatrix {
   traps: string[];
   /** Trigger phrase → answer hints. */
   keywords: string[];
-  caseStudies: string[];
 }
 
 export interface Service {
@@ -73,13 +71,6 @@ export interface Pillar {
   accent: string;
   services: Service[];
 }
-
-export const CASE_STUDIES = [
-  "EHR Healthcare",
-  "Mountkirk Games",
-  "Helicopter Racing League",
-  "TerramEarth",
-] as const;
 
 export const CURRICULUM: Pillar[] = [
   // ──────────────────────────────────────────────────────────────────────────
@@ -127,7 +118,6 @@ export const CURRICULUM: Pillar[] = [
             "Container orchestration → GKE.",
             "Want zero infra management (PaaS) → App Engine / Cloud Run.",
           ],
-          caseStudies: ["TerramEarth", "EHR Healthcare", "Mountkirk Games"],
         },
       },
       {
@@ -166,7 +156,6 @@ export const CURRICULUM: Pillar[] = [
             "Team lacks K8s expertise & wants minimal ops → Cloud Run / App Engine.",
             "Single small app → GKE overhead not justified.",
           ],
-          caseStudies: ["Mountkirk Games", "EHR Healthcare"],
         },
       },
       {
@@ -205,7 +194,6 @@ export const CURRICULUM: Pillar[] = [
             "Heavy always-on compute where it never scales to zero → GCE MIG may be cheaper.",
             "Zero cold-start tolerance with no min-instances budget → reconsider.",
           ],
-          caseStudies: ["Mountkirk Games", "EHR Healthcare"],
         },
       },
       {
@@ -240,7 +228,6 @@ export const CURRICULUM: Pillar[] = [
             "Long-running or high-CPU sustained work → GCE / GKE.",
             "Multi-step orchestrated workflows → Workflows / Cloud Composer.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
       {
@@ -274,7 +261,6 @@ export const CURRICULUM: Pillar[] = [
             "Full Kubernetes control → GKE.",
             "Specific OS/kernel or GPUs → Compute Engine.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
     ],
@@ -326,7 +312,6 @@ export const CURRICULUM: Pillar[] = [
             "Beyond 64 TB or petabyte analytics → BigQuery / Bigtable.",
             "High-throughput NoSQL / time-series → Bigtable or Firestore.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -364,7 +349,6 @@ export const CURRICULUM: Pillar[] = [
             "Analytics / data warehouse → BigQuery.",
             "Sequential / auto-increment primary keys → creates write hotspots (classic Spanner anti-pattern).",
           ],
-          caseStudies: ["Mountkirk Games", "TerramEarth"],
         },
       },
       {
@@ -402,7 +386,6 @@ export const CURRICULUM: Pillar[] = [
             "Transactional relational / multi-row ACID → Spanner or Cloud SQL.",
             "Small datasets (< 1 TB) or low QPS → cost-inefficient; use Firestore / Cloud SQL.",
           ],
-          caseStudies: ["Mountkirk Games", "Helicopter Racing League", "TerramEarth"],
         },
       },
       {
@@ -441,12 +424,6 @@ export const CURRICULUM: Pillar[] = [
             "Frequent small row-level updates/deletes → append-oriented, not ideal.",
             "Sub-second high-QPS serving → use Bigtable or a serving database.",
           ],
-          caseStudies: [
-            "EHR Healthcare",
-            "Helicopter Racing League",
-            "TerramEarth",
-            "Mountkirk Games",
-          ],
         },
       },
       {
@@ -481,7 +458,6 @@ export const CURRICULUM: Pillar[] = [
             "High-throughput time-series → Bigtable.",
             "Relational joins / strict relational schema → Cloud SQL / Spanner.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
       {
@@ -517,7 +493,6 @@ export const CURRICULUM: Pillar[] = [
             "Low-latency structured queries → a database, not GCS.",
             "POSIX / shared file-system semantics → Filestore, not GCS.",
           ],
-          caseStudies: ["EHR Healthcare", "Helicopter Racing League"],
         },
       },
       {
@@ -549,7 +524,6 @@ export const CURRICULUM: Pillar[] = [
             "Durable system of record → it's a cache, not primary storage.",
             "Analytical queries → BigQuery.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
     ],
@@ -596,7 +570,6 @@ export const CURRICULUM: Pillar[] = [
             "Expecting transitive routing across peered VPCs → not supported; use hub-and-spoke / Network Connectivity Center.",
             "Overlapping CIDR ranges when peering → not allowed.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -631,7 +604,6 @@ export const CURRICULUM: Pillar[] = [
             "Hand-rolling DNS-based failover → the global LB anycast IP already fails over.",
             "Wrong LB type for the protocol → use passthrough Network LB for raw TCP/UDP.",
           ],
-          caseStudies: ["Mountkirk Games", "Helicopter Racing League"],
         },
       },
       {
@@ -663,7 +635,6 @@ export const CURRICULUM: Pillar[] = [
             "Highly dynamic, per-user, uncacheable responses → limited benefit.",
             "Internal-only traffic → CDN is for external edge delivery.",
           ],
-          caseStudies: ["Helicopter Racing League"],
         },
       },
       {
@@ -692,7 +663,6 @@ export const CURRICULUM: Pillar[] = [
           antipatterns: [
             "Fast LB failover where DNS TTLs are too slow → prefer the Global LB anycast IP over DNS failover.",
           ],
-          caseStudies: ["TerramEarth", "EHR Healthcare"],
         },
       },
       {
@@ -723,7 +693,6 @@ export const CURRICULUM: Pillar[] = [
             "Small / quick encrypted link → HA VPN, not a Dedicated Interconnect (over-provisioning).",
             "Need encryption over the internet → VPN (Interconnect is private but not encrypted by default).",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -752,7 +721,6 @@ export const CURRICULUM: Pillar[] = [
             "Need inbound access → use a Load Balancer, not Cloud NAT.",
             "Reaching Google APIs privately → Private Google Access is cheaper than routing via NAT.",
           ],
-          caseStudies: ["TerramEarth"],
         },
       },
     ],
@@ -797,7 +765,6 @@ export const CURRICULUM: Pillar[] = [
             "Granting Owner/Editor broadly → violates least privilege.",
             "Downloading & sharing SA key files → use Workload Identity Federation / short-lived tokens instead.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth", "Mountkirk Games"],
         },
       },
       {
@@ -831,7 +798,6 @@ export const CURRICULUM: Pillar[] = [
             "Using it as an authentication mechanism → it's an exfiltration boundary; pair with IAM.",
             "Expecting it to protect unsupported services → check the supported-product list.",
           ],
-          caseStudies: ["EHR Healthcare"],
         },
       },
       {
@@ -864,7 +830,6 @@ export const CURRICULUM: Pillar[] = [
             "Storing passwords / API keys → Secret Manager, not KMS (KMS is for cryptographic keys).",
             "Keys required physically outside Google → EKM, not standard software keys.",
           ],
-          caseStudies: ["EHR Healthcare"],
         },
       },
       {
@@ -895,7 +860,6 @@ export const CURRICULUM: Pillar[] = [
             "Cryptographic encryption keys → Cloud KMS.",
             "Large blobs / files → GCS (Secret Manager is for small secrets).",
           ],
-          caseStudies: ["EHR Healthcare", "Mountkirk Games"],
         },
       },
       {
@@ -928,7 +892,6 @@ export const CURRICULUM: Pillar[] = [
             "Internal / L4-only passthrough traffic → Cloud Armor needs the L7 external ALB.",
             "Application-layer authorization → use IAP/IAM, not WAF rules.",
           ],
-          caseStudies: ["Helicopter Racing League", "Mountkirk Games"],
         },
       },
       {
@@ -961,7 +924,6 @@ export const CURRICULUM: Pillar[] = [
             "Volumetric DDoS / WAF needs → Cloud Armor.",
             "Public unauthenticated content → IAP is for gated access.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
     ],
@@ -1004,7 +966,6 @@ export const CURRICULUM: Pillar[] = [
             "Full-text log search & investigation → Cloud Logging.",
             "Distributed request tracing → Cloud Trace.",
           ],
-          caseStudies: ["Mountkirk Games", "Helicopter Racing League", "TerramEarth"],
         },
       },
       {
@@ -1035,7 +996,6 @@ export const CURRICULUM: Pillar[] = [
             "Time-series metric alerting → Cloud Monitoring (log-based metrics bridge the gap).",
             "Cheap long-term archive kept in log buckets → export to GCS Coldline/Archive.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -1066,7 +1026,6 @@ export const CURRICULUM: Pillar[] = [
             "Release orchestration/promotion across environments → Cloud Deploy.",
             "General long-running compute → not a compute platform.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
       {
@@ -1096,7 +1055,6 @@ export const CURRICULUM: Pillar[] = [
             "Building / testing images → Cloud Build (Deploy consumes the artifacts).",
             "A single ad-hoc manual deploy → a full pipeline may be overkill.",
           ],
-          caseStudies: ["Mountkirk Games"],
         },
       },
       {
@@ -1126,7 +1084,6 @@ export const CURRICULUM: Pillar[] = [
             "Imperative one-off console changes in prod → use IaC for reproducibility.",
             "Application CD (containers) → Cloud Deploy, not infra provisioning.",
           ],
-          caseStudies: ["TerramEarth"],
         },
       },
       {
@@ -1157,7 +1114,6 @@ export const CURRICULUM: Pillar[] = [
             "Bulk one-time analytics load → BigQuery Data Transfer / batch load.",
             "Migrating to an unsupported engine → check supported sources/targets.",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
     ],
@@ -1202,7 +1158,6 @@ export const CURRICULUM: Pillar[] = [
             "Synchronous request/response → use an API / LB, not Pub/Sub.",
             "Strict global ordering across all messages → ordering is per-key only.",
           ],
-          caseStudies: ["Mountkirk Games", "TerramEarth", "Helicopter Racing League"],
         },
       },
       {
@@ -1235,7 +1190,6 @@ export const CURRICULUM: Pillar[] = [
             "Lift-and-shift of existing Spark/Hadoop → Dataproc.",
             "Simple scheduled SQL transforms → BigQuery scheduled queries / Dataform.",
           ],
-          caseStudies: ["TerramEarth", "Helicopter Racing League", "Mountkirk Games"],
         },
       },
       {
@@ -1266,7 +1220,6 @@ export const CURRICULUM: Pillar[] = [
             "Greenfield serverless streaming → Dataflow.",
             "Interactive SQL warehouse analytics → BigQuery.",
           ],
-          caseStudies: ["TerramEarth"],
         },
       },
       {
@@ -1297,7 +1250,6 @@ export const CURRICULUM: Pillar[] = [
             "Raw data processing / ETL → Dataflow / Dataproc.",
             "Ad-hoc one-off free dashboards → Looker Studio may suffice.",
           ],
-          caseStudies: ["Helicopter Racing League", "TerramEarth"],
         },
       },
       {
@@ -1328,7 +1280,6 @@ export const CURRICULUM: Pillar[] = [
             "Simple SQL-based predictions → BigQuery ML may be simpler.",
             "Non-ML data transforms → Dataflow.",
           ],
-          caseStudies: ["Helicopter Racing League", "Mountkirk Games"],
         },
       },
       {
@@ -1358,7 +1309,6 @@ export const CURRICULUM: Pillar[] = [
             "A simple single event trigger → function / Pub/Sub or Workflows, not a full Airflow environment.",
             "The data processing itself → Dataflow / Dataproc (Composer orchestrates, it doesn't crunch).",
           ],
-          caseStudies: ["TerramEarth"],
         },
       },
       {
@@ -1388,7 +1338,6 @@ export const CURRICULUM: Pillar[] = [
             "Complex custom streaming logic → Dataflow (Beam).",
             "Pure orchestration of existing jobs → Cloud Composer.",
           ],
-          caseStudies: ["TerramEarth"],
         },
       },
     ],
@@ -1493,7 +1442,6 @@ export const CURRICULUM: Pillar[] = [
             "\"quick to set up\" / \"in a few days\" → HA VPN",
             "\"to another cloud\" → Cross-Cloud Interconnect",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -1579,7 +1527,6 @@ export const CURRICULUM: Pillar[] = [
             "\"across organizations\" / \"encrypted\" → HA VPN",
             "\"privately expose one service\" → Private Service Connect",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
       {
@@ -1665,7 +1612,6 @@ export const CURRICULUM: Pillar[] = [
             "\"large online dataset to GCS\" / \"scheduled\" → Storage Transfer Service",
             "\"load into BigQuery on a schedule\" → BigQuery Data Transfer",
           ],
-          caseStudies: ["EHR Healthcare", "TerramEarth"],
         },
       },
     ],

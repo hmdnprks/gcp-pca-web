@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { Confidence, DecisionMatrix, FlatService } from "../lib/curriculum";
 import { SERVICE_INDEX } from "../lib/curriculum";
+import { caseStudiesFor } from "../lib/caseStudies";
 import { iconFor } from "../lib/icons";
 import { ConfidencePicker } from "./ConfidencePicker";
 
@@ -184,8 +185,6 @@ function MatrixView({ matrix }: { matrix: DecisionMatrix }) {
           </ul>
         </section>
       )}
-
-      <CaseStudyTags items={matrix.caseStudies} />
     </div>
   );
 }
@@ -322,7 +321,6 @@ export function DetailPanel({
                     items={service.detail.antipatterns}
                   />
 
-                  <CaseStudyTags items={service.detail.caseStudies} />
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 p-8 text-center">
@@ -339,6 +337,9 @@ export function DetailPanel({
                   </p>
                 </div>
               )}
+
+              {/* Case study tags (derived from lib/caseStudies.ts) */}
+              <CaseStudyTags items={caseStudiesFor(service.id)} />
 
               {/* Paired services */}
               {pairings.length > 0 && (
