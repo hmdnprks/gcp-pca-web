@@ -123,6 +123,7 @@ export const SERVICE_DOMAINS: Record<string, string[]> = {
   "lb-chooser": ["d1", "d2"],
   "data-processing-chooser": ["d1", "d2"],
   "storage-chooser": ["d1", "d2"],
+  "compliance-mapping": ["d3"],
 };
 
 export function domainsForService(serviceId: string): string[] {

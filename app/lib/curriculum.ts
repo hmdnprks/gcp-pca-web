@@ -2041,6 +2041,108 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "compliance-mapping",
+        name: "Compliance & Regulation Mapping",
+        icon: "compliance-mapping",
+        tagline: "Requirement → the GCP control that satisfies it",
+        pairings: ["vpc-sc", "cloud-kms", "iam", "cloud-logging"],
+        matrix: {
+          question: "Which GCP control satisfies this compliance / regulatory requirement?",
+          columns: [
+            { key: "need", label: "Requirement" },
+            { key: "how", label: "How it's met" },
+            { key: "note", label: "Watch out" },
+          ],
+          rows: [
+            {
+              option: "Resource Location org policy + Assured Workloads",
+              cells: {
+                need: "Data residency / sovereignty",
+                how: "Constrain resource locations org-wide; Assured Workloads enforces packaged regimes (FedRAMP, IL4/5, CJIS, HIPAA, EU sovereignty) with personnel & support controls",
+                note: "Generic 'keep data in region' → location org policy; a named regime → Assured Workloads.",
+              },
+              pickWhen:
+                "Data must stay in a jurisdiction, or you need a named regulatory package with support/personnel controls.",
+            },
+            {
+              option: "VPC Service Controls",
+              cells: {
+                need: "Prevent data exfiltration (perimeter)",
+                how: "Service perimeter around managed services (GCS, BigQuery, etc.) so data can't move to projects/networks outside the boundary",
+                note: "Stops trusted-but-compromised identities exfiltrating data; complements IAM, doesn't replace it.",
+              },
+              pickWhen:
+                "Sensitive data in managed services must not leave a defined boundary even if credentials leak.",
+            },
+            {
+              option: "Cloud KMS — CMEK / CSEK (+ Confidential Computing)",
+              cells: {
+                need: "Customer-controlled encryption",
+                how: "All data encrypted at rest by default; CMEK to own key lifecycle/rotation, CSEK to supply your own; Confidential Computing encrypts data in-use",
+                note: "Default encryption is always on — CMEK is about controlling the KEYS, not adding encryption.",
+              },
+              pickWhen:
+                "Regulation requires you to control/rotate encryption keys, or to keep data encrypted while processed.",
+            },
+            {
+              option: "Sensitive Data Protection (Cloud DLP)",
+              cells: {
+                need: "Discover & de-identify PII / PHI / PCI",
+                how: "Scan & classify sensitive data across storage and streams; mask, tokenize or redact it",
+                note: "De-identify before sending data to logs, analytics or AI models.",
+              },
+              pickWhen:
+                "You must find, classify or redact sensitive data (PII/PHI/PAN) to meet privacy rules.",
+            },
+            {
+              option: "Cloud Audit Logs",
+              cells: {
+                need: "Auditability / accountability",
+                how: "Admin Activity logs always on; enable Data Access logs for a record of who read/wrote what",
+                note: "Data Access logs are OFF by default (except BigQuery) — enable them or the audit trail is incomplete.",
+              },
+              pickWhen:
+                "You must prove who accessed or changed data/config for an audit.",
+            },
+            {
+              option: "Access Transparency + Access Approval",
+              cells: {
+                need: "Oversight of Google-support access",
+                how: "Access Transparency logs Google personnel access to your data; Access Approval requires your explicit approval first",
+                note: "For regimes demanding control/visibility over the cloud provider touching your data.",
+              },
+              pickWhen:
+                "You must see and/or approve any Google support/engineer access to your data.",
+            },
+            {
+              option: "IAM + Policy Intelligence / Security Command Center",
+              cells: {
+                need: "Least privilege & compliance posture",
+                how: "Least-privilege roles + Recommender to trim excess access; SCC surfaces misconfig, findings & compliance dashboards (CIS/PCI/etc.)",
+                note: "SCC Premium maps findings to benchmarks; Recommender enforces least privilege continuously.",
+              },
+              pickWhen:
+                "You must enforce least privilege and continuously monitor compliance posture & misconfigurations.",
+            },
+          ],
+          traps: [
+            "Data Access audit logs are disabled by default (except BigQuery) — turn them on, or you won't have the records an audit needs.",
+            "CMEK doesn't add encryption (data is already encrypted at rest) — it gives YOU control of the key lifecycle. Don't cite CMEK when the need is merely 'encrypted at rest'.",
+            "VPC Service Controls stops exfiltration by trusted-but-compromised identities; IAM controls who has access. Compliance usually needs both, not one.",
+            "A named regime (FedRAMP, CJIS, IL4/5, HIPAA, EU sovereignty) → Assured Workloads; a generic 'keep data in region' → Resource Location org policy.",
+          ],
+          keywords: [
+            "\"data must stay in region/country\" → Resource Location org policy",
+            "\"FedRAMP / CJIS / IL4 / sovereign controls\" → Assured Workloads",
+            "\"prevent data exfiltration\" / \"perimeter\" → VPC Service Controls",
+            "\"we must own / rotate the keys\" → Cloud KMS (CMEK)",
+            "\"find / redact PII / PHI\" → Sensitive Data Protection (DLP)",
+            "\"who accessed the data\" / audit trail → Cloud Audit Logs (enable Data Access)",
+            "\"approve Google support access\" → Access Approval / Access Transparency",
+          ],
+        },
+      },
     ],
   },
 ];

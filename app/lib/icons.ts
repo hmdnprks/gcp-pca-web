@@ -32,6 +32,7 @@ import {
   Rocket,
   Route,
   Router,
+  Scale,
   ScanEye,
   ScrollText,
   Server,
@@ -125,6 +126,7 @@ const ICONS: Record<string, LucideIcon> = {
   "lb-chooser": Split,
   "data-processing-chooser": Shuffle,
   "storage-chooser": HardDrive,
+  "compliance-mapping": Scale,
 
   // Generic
   cloud: Cloud,
