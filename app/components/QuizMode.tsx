@@ -20,6 +20,8 @@ interface QuizModeProps {
   confidence: Record<string, Confidence>;
   onSetConfidence: (id: string, level: Confidence | undefined) => void;
   onReview: (serviceId: string) => void;
+  /** When set, open straight into a quiz scoped to this case study. */
+  initialCaseStudy?: string | null;
   onClose: () => void;
 }
 
@@ -27,7 +29,33 @@ type Phase = "setup" | "playing" | "summary";
 type Scope =
   | { kind: "all" }
   | { kind: "weak" }
-  | { kind: "domain"; domain: string };
+  | { kind: "domain"; domain: string }
+  | { kind: "section"; section: string }
+  | { kind: "caseStudy"; caseStudy: string };
+
+const CASE_STUDY_NAMES: Record<string, string> = {
+  altostrat: "Altostrat Media",
+  cymbal: "Cymbal Retail",
+  ehr: "EHR Healthcare",
+  knightmotives: "KnightMotives",
+};
+
+/** A question is answered correctly when the chosen set equals the answer set. */
+function isCorrect(q: QuizQuestion, chosen: number[]): boolean {
+  const answers = Array.isArray(q.answerIndex) ? q.answerIndex : [q.answerIndex];
+  if (chosen.length !== answers.length) return false;
+  return answers.every((a) => chosen.includes(a));
+}
+
+function answerCount(q: QuizQuestion): number {
+  return Array.isArray(q.answerIndex) ? q.answerIndex.length : 1;
+}
+
+function isAnswerOption(q: QuizQuestion, i: number): boolean {
+  return Array.isArray(q.answerIndex)
+    ? q.answerIndex.includes(i)
+    : i === q.answerIndex;
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -45,25 +73,48 @@ function questionsForScope(
   if (scope.kind === "all") return QUIZ;
   if (scope.kind === "domain")
     return QUIZ.filter((q) => q.domain === scope.domain);
+  if (scope.kind === "section")
+    return QUIZ.filter((q) => q.section === scope.section);
+  if (scope.kind === "caseStudy")
+    return QUIZ.filter((q) => q.caseStudy === scope.caseStudy);
   // weak zones: linked service currently marked "weak"
-  return QUIZ.filter((q) => confidence[q.serviceId] === "weak");
+  return QUIZ.filter((q) => q.serviceId && confidence[q.serviceId] === "weak");
 }
 
 export function QuizMode({
   confidence,
   onSetConfidence,
   onReview,
+  initialCaseStudy,
   onClose,
 }: QuizModeProps) {
-  const [phase, setPhase] = useState<Phase>("setup");
-  const [scope, setScope] = useState<Scope>({ kind: "all" });
-  const [deck, setDeck] = useState<QuizQuestion[]>([]);
+  // Deep-link: when opened for a case study, start straight into that deck.
+  const initialScope: Scope = initialCaseStudy
+    ? { kind: "caseStudy", caseStudy: initialCaseStudy }
+    : { kind: "all" };
+  const [phase, setPhase] = useState<Phase>(
+    initialCaseStudy ? "playing" : "setup",
+  );
+  const [scope, setScope] = useState<Scope>(initialScope);
+  const [deck, setDeck] = useState<QuizQuestion[]>(() =>
+    initialCaseStudy ? shuffle(questionsForScope(initialScope, confidence)) : [],
+  );
   const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
+  // Chosen option indices for the current question. `revealed` flips once the
+  // required number of picks is in (1 for normal, N for "choose N").
+  const [chosen, setChosen] = useState<number[]>([]);
+  const [revealed, setRevealed] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
 
-  const domains = useMemo(
-    () => [...new Set(QUIZ.map((q) => q.domain))],
+  const domains = useMemo(() => [...new Set(QUIZ.map((q) => q.domain))], []);
+  const sections = useMemo(
+    () =>
+      [...new Set(QUIZ.map((q) => q.section).filter(Boolean))].sort() as string[],
+    [],
+  );
+  const caseStudies = useMemo(
+    () =>
+      [...new Set(QUIZ.map((q) => q.caseStudy).filter(Boolean))] as string[],
     [],
   );
   const scopeCount = questionsForScope(scope, confidence).length;
@@ -81,18 +132,27 @@ export function QuizMode({
     if (questions.length === 0) return;
     setDeck(shuffle(questions));
     setIndex(0);
-    setSelected(null);
+    setChosen([]);
+    setRevealed(false);
     setResults({});
     setPhase("playing");
   };
 
   const answer = (q: QuizQuestion, choice: number) => {
-    if (selected !== null) return; // already answered
-    setSelected(choice);
-    const correct = choice === q.answerIndex;
+    if (revealed) return; // already scored this question
+    const picks = chosen.includes(choice)
+      ? chosen.filter((c) => c !== choice)
+      : [...chosen, choice];
+    setChosen(picks);
+
+    // Reveal + score once the required number of picks is in.
+    if (picks.length < answerCount(q)) return;
+    setRevealed(true);
+    const correct = isCorrect(q, picks);
     setResults((prev) => ({ ...prev, [q.id]: correct }));
 
-    // Feed the confidence heatmap.
+    // Feed the confidence heatmap (only when the question links to a service).
+    if (!q.serviceId) return;
     if (!correct) {
       onSetConfidence(q.serviceId, "weak");
     } else {
@@ -108,7 +168,8 @@ export function QuizMode({
       setPhase("summary");
     } else {
       setIndex((i) => i + 1);
-      setSelected(null);
+      setChosen([]);
+      setRevealed(false);
     }
   };
 
@@ -165,10 +226,72 @@ export function QuizMode({
                   icon={<Target className="h-4 w-4" />}
                   label="My weak zones only"
                   count={
-                    QUIZ.filter((q) => confidence[q.serviceId] === "weak").length
+                    QUIZ.filter(
+                      (q) => q.serviceId && confidence[q.serviceId] === "weak",
+                    ).length
                   }
                   hint="Questions linked to services you've marked Weak"
                 />
+                <div className="pt-2">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    By exam section{" "}
+                    <span className="text-fuchsia-500/70">· official</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {sections.map((s) => {
+                      const active =
+                        scope.kind === "section" && scope.section === s;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => setScope({ kind: "section", section: s })}
+                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                            active
+                              ? "border-fuchsia-500/60 bg-fuchsia-500/15 text-fuchsia-200"
+                              : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                          }`}
+                        >
+                          {s}{" "}
+                          <span className="text-zinc-600">
+                            ({QUIZ.filter((q) => q.section === s).length})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    By case study{" "}
+                    <span className="text-fuchsia-500/70">· official</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {caseStudies.map((c) => {
+                      const active =
+                        scope.kind === "caseStudy" && scope.caseStudy === c;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() =>
+                            setScope({ kind: "caseStudy", caseStudy: c })
+                          }
+                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                            active
+                              ? "border-fuchsia-500/60 bg-fuchsia-500/15 text-fuchsia-200"
+                              : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                          }`}
+                        >
+                          {CASE_STUDY_NAMES[c] ?? c}{" "}
+                          <span className="text-zinc-600">
+                            ({QUIZ.filter((q) => q.caseStudy === c).length})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="pt-2">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
                     By domain
@@ -222,7 +345,8 @@ export function QuizMode({
               index={index}
               total={deck.length}
               score={score}
-              selected={selected}
+              chosen={chosen}
+              revealed={revealed}
               onAnswer={(choice) => answer(deck[index], choice)}
               onNext={next}
               isLast={index + 1 >= deck.length}
@@ -291,7 +415,8 @@ function QuestionCard({
   index,
   total,
   score,
-  selected,
+  chosen,
+  revealed,
   onAnswer,
   onNext,
   isLast,
@@ -300,24 +425,33 @@ function QuestionCard({
   index: number;
   total: number;
   score: number;
-  selected: number | null;
+  chosen: number[];
+  revealed: boolean;
   onAnswer: (choice: number) => void;
   onNext: () => void;
   isLast: boolean;
 }) {
-  const answered = selected !== null;
-  const correct = selected === q.answerIndex;
-  const linked = SERVICE_INDEX[q.serviceId];
+  const answered = revealed;
+  const correct = isCorrect(q, chosen);
+  const linked = q.serviceId ? SERVICE_INDEX[q.serviceId] : undefined;
+  const multi = Array.isArray(q.answerIndex);
 
   return (
     <div className="space-y-5">
       {/* Progress */}
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+      <div className="flex items-center justify-between gap-2 text-xs text-zinc-500">
         <span>
           Question {index + 1} / {total}
         </span>
-        <span className="rounded-full border border-zinc-800 px-2 py-0.5">
-          {q.domain}
+        <span className="flex items-center gap-1.5">
+          {q.section && (
+            <span className="rounded-full border border-fuchsia-500/30 bg-fuchsia-500/5 px-2 py-0.5 text-fuchsia-300/80">
+              {q.section}
+            </span>
+          )}
+          <span className="rounded-full border border-zinc-800 px-2 py-0.5">
+            {q.domain}
+          </span>
         </span>
       </div>
       <div className="h-1 overflow-hidden rounded-full bg-zinc-800">
@@ -329,15 +463,22 @@ function QuestionCard({
 
       <h2 className="text-base font-medium leading-relaxed text-zinc-100">
         {q.prompt}
+        {multi && (
+          <span className="ml-2 text-sm font-normal text-fuchsia-300/80">
+            (choose {answerCount(q)})
+          </span>
+        )}
       </h2>
 
       <div className="space-y-2">
         {q.options.map((opt, i) => {
-          const isAnswer = i === q.answerIndex;
-          const isChosen = i === selected;
+          const isAnswer = isAnswerOption(q, i);
+          const isChosen = chosen.includes(i);
           let cls =
             "border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60 text-zinc-200";
-          if (answered) {
+          if (!answered && isChosen) {
+            cls = "border-fuchsia-500/60 bg-fuchsia-500/10 text-fuchsia-100";
+          } else if (answered) {
             if (isAnswer)
               cls = "border-emerald-500/60 bg-emerald-500/10 text-emerald-100";
             else if (isChosen)
@@ -455,12 +596,15 @@ function Summary({
           </h3>
           <ul className="space-y-2">
             {missed.map((q) => {
-              const linked = SERVICE_INDEX[q.serviceId];
+              const linked = q.serviceId
+                ? SERVICE_INDEX[q.serviceId]
+                : undefined;
               return (
                 <li key={q.id}>
                   <button
-                    onClick={() => onReview(q.serviceId)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-left transition-colors hover:border-fuchsia-500/40 hover:bg-fuchsia-500/5"
+                    onClick={() => linked && onReview(q.serviceId!)}
+                    disabled={!linked}
+                    className="flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-left transition-colors enabled:hover:border-fuchsia-500/40 enabled:hover:bg-fuchsia-500/5 disabled:cursor-default"
                   >
                     <BookOpen className="h-4 w-4 shrink-0 text-fuchsia-400" />
                     <span className="flex-1 text-sm text-zinc-200">

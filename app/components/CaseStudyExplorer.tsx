@@ -6,8 +6,10 @@ import {
   Car,
   Clapperboard,
   Filter,
+  GraduationCap,
   HeartPulse,
   Layers,
+  Lightbulb,
   ListChecks,
   ShoppingBag,
   Target,
@@ -17,6 +19,7 @@ import type { LucideIcon } from "lucide-react";
 import { CASE_STUDIES, type CaseStudy } from "../lib/caseStudies";
 import { SERVICE_INDEX } from "../lib/curriculum";
 import { iconFor } from "../lib/icons";
+import { QUIZ } from "../lib/quiz";
 
 const CS_ICON: Record<string, LucideIcon> = {
   altostrat: Clapperboard,
@@ -35,12 +38,15 @@ const ACCENT_TEXT: Record<string, string> = {
 interface CaseStudyExplorerProps {
   onReview: (serviceId: string) => void;
   onFilter: (caseStudyName: string) => void;
+  /** Open the quiz scoped to this case study's official questions. */
+  onPractice: (caseStudyId: string) => void;
   onClose: () => void;
 }
 
 export function CaseStudyExplorer({
   onReview,
   onFilter,
+  onPractice,
   onClose,
 }: CaseStudyExplorerProps) {
   const [activeId, setActiveId] = useState(CASE_STUDIES[0].id);
@@ -48,6 +54,7 @@ export function CaseStudyExplorer({
     CASE_STUDIES.find((c) => c.id === activeId) ?? CASE_STUDIES[0];
   const CsIcon = CS_ICON[cs.id] ?? Building2;
   const accent = ACCENT_TEXT[cs.accent] ?? "text-zinc-300";
+  const questionCount = QUIZ.filter((q) => q.caseStudy === cs.id).length;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -131,13 +138,25 @@ export function CaseStudyExplorer({
 
             <p className="text-sm leading-relaxed text-zinc-300">{cs.summary}</p>
 
-            <button
-              onClick={() => onFilter(cs.name)}
-              className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-200 transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/10 hover:text-fuchsia-200"
-            >
-              <Filter className="h-4 w-4" />
-              Filter the map to this case study
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => onFilter(cs.name)}
+                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-200 transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/10 hover:text-fuchsia-200"
+              >
+                <Filter className="h-4 w-4" />
+                Filter the map to this case study
+              </button>
+              {questionCount > 0 && (
+                <button
+                  onClick={() => onPractice(cs.id)}
+                  className="flex items-center gap-2 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 px-3 py-2 text-xs font-semibold text-fuchsia-200 transition-colors hover:border-fuchsia-500/70 hover:bg-fuchsia-500/20"
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  Practice {questionCount} official question
+                  {questionCount === 1 ? "" : "s"}
+                </button>
+              )}
+            </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <ReqList
@@ -153,6 +172,45 @@ export function CaseStudyExplorer({
                 items={cs.technicalReqs}
               />
             </div>
+
+            {/* Proposed technical solution (official) */}
+            {cs.proposedSolution && cs.proposedSolution.length > 0 && (
+              <section className="space-y-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.03] p-4">
+                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+                  <Lightbulb className="h-4 w-4" />
+                  Proposed technical solution
+                  <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-medium normal-case tracking-normal text-amber-300/70">
+                    official
+                  </span>
+                </h3>
+                <p className="text-[11px] text-zinc-500">
+                  Google&apos;s reference answer from the official PCA training
+                  decks.
+                </p>
+                <div className="space-y-3">
+                  {cs.proposedSolution.map((group, gi) => (
+                    <div key={gi} className="space-y-1.5">
+                      {group.heading && (
+                        <h4 className="text-xs font-semibold text-zinc-200">
+                          {group.heading}
+                        </h4>
+                      )}
+                      <ul className="space-y-1.5">
+                        {group.points.map((point, pi) => (
+                          <li
+                            key={pi}
+                            className="flex gap-2 text-xs leading-relaxed text-zinc-300"
+                          >
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-500/60" />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Featured services */}
             <section className="space-y-2">

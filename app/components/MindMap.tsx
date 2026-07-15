@@ -10,6 +10,7 @@ import {
   Link2,
   RotateCcw,
   Search,
+  WalletCards,
   X,
 } from "lucide-react";
 import type { Confidence, Service } from "../lib/curriculum";
@@ -20,6 +21,7 @@ import { iconFor } from "../lib/icons";
 import { ConfidencePicker } from "./ConfidencePicker";
 import { DetailPanel } from "./DetailPanel";
 import { QuizMode } from "./QuizMode";
+import { FlashcardMode } from "./FlashcardMode";
 import { CaseStudyExplorer } from "./CaseStudyExplorer";
 import { ReadinessDashboard } from "./ReadinessDashboard";
 
@@ -170,6 +172,8 @@ export function MindMap() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
+  const [quizCaseStudy, setQuizCaseStudy] = useState<string | null>(null);
+  const [flashcardsOpen, setFlashcardsOpen] = useState(false);
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [caseStudyFilter, setCaseStudyFilter] = useState<string | null>(null);
@@ -386,6 +390,13 @@ export function MindMap() {
               Quiz
             </button>
             <button
+              onClick={() => setFlashcardsOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-teal-500/50 bg-teal-500/15 px-2.5 py-1.5 text-xs font-semibold text-teal-200 transition-colors hover:bg-teal-500/25"
+            >
+              <WalletCards className="h-4 w-4" />
+              <span className="hidden sm:inline">Study Cards</span>
+            </button>
+            <button
               onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(CURRICULUM.map((p) => p.id)))}
               className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800"
             >
@@ -532,7 +543,22 @@ export function MindMap() {
           confidence={confidence}
           onSetConfidence={setServiceConfidence}
           onReview={(id) => setSelectedId(id)}
-          onClose={() => setQuizOpen(false)}
+          initialCaseStudy={quizCaseStudy}
+          onClose={() => {
+            setQuizOpen(false);
+            setQuizCaseStudy(null);
+          }}
+        />
+      )}
+
+      {/* ── Flashcards overlay ─────────────────────────────────────────── */}
+      {flashcardsOpen && (
+        <FlashcardMode
+          onReview={(id) => {
+            setFlashcardsOpen(false);
+            setSelectedId(id);
+          }}
+          onClose={() => setFlashcardsOpen(false)}
         />
       )}
 
@@ -546,6 +572,11 @@ export function MindMap() {
           onFilter={(name) => {
             setCaseStudyFilter(name);
             setExplorerOpen(false);
+          }}
+          onPractice={(id) => {
+            setExplorerOpen(false);
+            setQuizCaseStudy(id);
+            setQuizOpen(true);
           }}
           onClose={() => setExplorerOpen(false)}
         />
