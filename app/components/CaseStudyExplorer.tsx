@@ -40,6 +40,8 @@ interface CaseStudyExplorerProps {
   onFilter: (caseStudyName: string) => void;
   /** Open the quiz scoped to this case study's official questions. */
   onPractice: (caseStudyId: string) => void;
+  /** Case study to open on first render (defaults to the first). */
+  initialId?: string;
   onClose: () => void;
 }
 
@@ -47,9 +49,14 @@ export function CaseStudyExplorer({
   onReview,
   onFilter,
   onPractice,
+  initialId,
   onClose,
 }: CaseStudyExplorerProps) {
-  const [activeId, setActiveId] = useState(CASE_STUDIES[0].id);
+  const [activeId, setActiveId] = useState(
+    initialId && CASE_STUDIES.some((c) => c.id === initialId)
+      ? initialId
+      : CASE_STUDIES[0].id,
+  );
   const cs: CaseStudy =
     CASE_STUDIES.find((c) => c.id === activeId) ?? CASE_STUDIES[0];
   const CsIcon = CS_ICON[cs.id] ?? Building2;

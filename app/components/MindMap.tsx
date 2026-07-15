@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
+  CalendarCheck,
   ChevronDown,
   Gauge,
   GraduationCap,
@@ -22,6 +23,7 @@ import { ConfidencePicker } from "./ConfidencePicker";
 import { DetailPanel } from "./DetailPanel";
 import { QuizMode } from "./QuizMode";
 import { FlashcardMode } from "./FlashcardMode";
+import { StudyPlanMode } from "./StudyPlanMode";
 import { CaseStudyExplorer } from "./CaseStudyExplorer";
 import { ReadinessDashboard } from "./ReadinessDashboard";
 
@@ -173,8 +175,12 @@ export function MindMap() {
   const [hydrated, setHydrated] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizCaseStudy, setQuizCaseStudy] = useState<string | null>(null);
+  const [quizSection, setQuizSection] = useState<string | null>(null);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
+  const [flashcardDeck, setFlashcardDeck] = useState<string | null>(null);
   const [explorerOpen, setExplorerOpen] = useState(false);
+  const [explorerInitial, setExplorerInitial] = useState<string | null>(null);
+  const [studyPlanOpen, setStudyPlanOpen] = useState(false);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [caseStudyFilter, setCaseStudyFilter] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -369,6 +375,13 @@ export function MindMap() {
               </span>
             </div>
             <button
+              onClick={() => setStudyPlanOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-sky-500/50 bg-sky-500/15 px-2.5 py-1.5 text-xs font-semibold text-sky-200 transition-colors hover:bg-sky-500/25"
+            >
+              <CalendarCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Study Plan</span>
+            </button>
+            <button
               onClick={() => setReadinessOpen(true)}
               className="flex items-center gap-1.5 rounded-md border border-emerald-500/50 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/25"
             >
@@ -544,9 +557,11 @@ export function MindMap() {
           onSetConfidence={setServiceConfidence}
           onReview={(id) => setSelectedId(id)}
           initialCaseStudy={quizCaseStudy}
+          initialSection={quizSection}
           onClose={() => {
             setQuizOpen(false);
             setQuizCaseStudy(null);
+            setQuizSection(null);
           }}
         />
       )}
@@ -556,29 +571,68 @@ export function MindMap() {
         <FlashcardMode
           onReview={(id) => {
             setFlashcardsOpen(false);
+            setFlashcardDeck(null);
             setSelectedId(id);
           }}
-          onClose={() => setFlashcardsOpen(false)}
+          initialDeck={flashcardDeck}
+          onClose={() => {
+            setFlashcardsOpen(false);
+            setFlashcardDeck(null);
+          }}
+        />
+      )}
+
+      {/* ── Study plan overlay ─────────────────────────────────────────── */}
+      {studyPlanOpen && (
+        <StudyPlanMode
+          confidence={confidence}
+          onReview={(id) => {
+            setStudyPlanOpen(false);
+            setSelectedId(id);
+          }}
+          onQuiz={(section) => {
+            setStudyPlanOpen(false);
+            setQuizSection(section);
+            setQuizOpen(true);
+          }}
+          onCaseStudy={(id) => {
+            setStudyPlanOpen(false);
+            setExplorerInitial(id);
+            setExplorerOpen(true);
+          }}
+          onFlashcards={(deck) => {
+            setStudyPlanOpen(false);
+            setFlashcardDeck(deck ?? null);
+            setFlashcardsOpen(true);
+          }}
+          onClose={() => setStudyPlanOpen(false)}
         />
       )}
 
       {/* ── Case Study Explorer overlay ────────────────────────────────── */}
       {explorerOpen && (
         <CaseStudyExplorer
+          initialId={explorerInitial ?? undefined}
           onReview={(id) => {
             setExplorerOpen(false);
+            setExplorerInitial(null);
             setSelectedId(id);
           }}
           onFilter={(name) => {
             setCaseStudyFilter(name);
             setExplorerOpen(false);
+            setExplorerInitial(null);
           }}
           onPractice={(id) => {
             setExplorerOpen(false);
+            setExplorerInitial(null);
             setQuizCaseStudy(id);
             setQuizOpen(true);
           }}
-          onClose={() => setExplorerOpen(false)}
+          onClose={() => {
+            setExplorerOpen(false);
+            setExplorerInitial(null);
+          }}
         />
       )}
 

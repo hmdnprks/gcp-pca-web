@@ -22,6 +22,8 @@ interface QuizModeProps {
   onReview: (serviceId: string) => void;
   /** When set, open straight into a quiz scoped to this case study. */
   initialCaseStudy?: string | null;
+  /** When set, open straight into a quiz scoped to this exam section. */
+  initialSection?: string | null;
   onClose: () => void;
 }
 
@@ -86,18 +88,21 @@ export function QuizMode({
   onSetConfidence,
   onReview,
   initialCaseStudy,
+  initialSection,
   onClose,
 }: QuizModeProps) {
-  // Deep-link: when opened for a case study, start straight into that deck.
+  // Deep-link: when opened for a case study or exam section, start straight
+  // into that scoped deck.
+  const deepLink = Boolean(initialCaseStudy || initialSection);
   const initialScope: Scope = initialCaseStudy
     ? { kind: "caseStudy", caseStudy: initialCaseStudy }
-    : { kind: "all" };
-  const [phase, setPhase] = useState<Phase>(
-    initialCaseStudy ? "playing" : "setup",
-  );
+    : initialSection
+      ? { kind: "section", section: initialSection }
+      : { kind: "all" };
+  const [phase, setPhase] = useState<Phase>(deepLink ? "playing" : "setup");
   const [scope, setScope] = useState<Scope>(initialScope);
   const [deck, setDeck] = useState<QuizQuestion[]>(() =>
-    initialCaseStudy ? shuffle(questionsForScope(initialScope, confidence)) : [],
+    deepLink ? shuffle(questionsForScope(initialScope, confidence)) : [],
   );
   const [index, setIndex] = useState(0);
   // Chosen option indices for the current question. `revealed` flips once the

@@ -24,6 +24,8 @@ const KNOWN_KEY = "gcp-pca-flashcards-known-v1";
 
 interface FlashcardModeProps {
   onReview: (serviceId: string) => void;
+  /** When set, open straight into this deck (auto-start). */
+  initialDeck?: string | null;
   onClose: () => void;
 }
 
@@ -45,10 +47,24 @@ function cardsForScope(scope: Scope): Flashcard[] {
   return FLASHCARDS.filter((c) => c.deck === scope.deck);
 }
 
-export function FlashcardMode({ onReview, onClose }: FlashcardModeProps) {
-  const [phase, setPhase] = useState<Phase>("setup");
-  const [scope, setScope] = useState<Scope>({ kind: "all" });
-  const [deck, setDeck] = useState<Flashcard[]>([]);
+export function FlashcardMode({
+  onReview,
+  initialDeck,
+  onClose,
+}: FlashcardModeProps) {
+  // Deep-link: when opened for a specific deck, start straight into it.
+  const deepDeck =
+    initialDeck && FLASHCARD_DECKS.some((d) => d === initialDeck)
+      ? initialDeck
+      : null;
+  const initialScope: Scope = deepDeck
+    ? { kind: "deck", deck: deepDeck }
+    : { kind: "all" };
+  const [phase, setPhase] = useState<Phase>(deepDeck ? "playing" : "setup");
+  const [scope, setScope] = useState<Scope>(initialScope);
+  const [deck, setDeck] = useState<Flashcard[]>(() =>
+    deepDeck ? shuffle(cardsForScope(initialScope)) : [],
+  );
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [results, setResults] = useState<Record<string, Grade>>({});
