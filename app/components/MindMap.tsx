@@ -8,6 +8,7 @@ import {
   Gauge,
   GraduationCap,
   Layers,
+  Lightbulb,
   Link2,
   RotateCcw,
   Search,
@@ -24,6 +25,7 @@ import { DetailPanel } from "./DetailPanel";
 import { QuizMode } from "./QuizMode";
 import { FlashcardMode } from "./FlashcardMode";
 import { StudyPlanMode } from "./StudyPlanMode";
+import { ExamTipsMode } from "./ExamTipsMode";
 import { CaseStudyExplorer } from "./CaseStudyExplorer";
 import { ReadinessDashboard } from "./ReadinessDashboard";
 
@@ -181,6 +183,7 @@ export function MindMap() {
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [explorerInitial, setExplorerInitial] = useState<string | null>(null);
   const [studyPlanOpen, setStudyPlanOpen] = useState(false);
+  const [examTipsOpen, setExamTipsOpen] = useState(false);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [caseStudyFilter, setCaseStudyFilter] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -410,6 +413,13 @@ export function MindMap() {
               <span className="hidden sm:inline">Study Cards</span>
             </button>
             <button
+              onClick={() => setExamTipsOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-amber-500/50 bg-amber-500/15 px-2.5 py-1.5 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-500/25"
+            >
+              <Lightbulb className="h-4 w-4" />
+              <span className="hidden sm:inline">Exam Tips</span>
+            </button>
+            <button
               onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(CURRICULUM.map((p) => p.id)))}
               className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800"
             >
@@ -608,6 +618,9 @@ export function MindMap() {
           onClose={() => setStudyPlanOpen(false)}
         />
       )}
+
+      {/* ── Exam tips overlay ──────────────────────────────────────────── */}
+      {examTipsOpen && <ExamTipsMode onClose={() => setExamTipsOpen(false)} />}
 
       {/* ── Case Study Explorer overlay ────────────────────────────────── */}
       {explorerOpen && (
