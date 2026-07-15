@@ -18,7 +18,7 @@ Built with **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, and *
 - **Scenario quiz** — 80+ decision-style questions, including **67 official diagnostic questions** extracted verbatim from the Google "Preparing for your PCA" training decks (Modules 1–6). Scope a quiz by **exam section**, **case study** (Altostrat, Cymbal, EHR, KnightMotives), domain, or your weak zones. Supports multi-answer ("choose two") questions. Answers update the confidence heatmap (wrong → Weak, correct → Reviewing) with review links.
 - **Persistent progress** — confidence levels and expanded/collapsed state are saved to `localStorage`, so study progress survives refreshes.
 
-All **37 services across all 6 pillars are fully populated** with exam-grade content.
+**All services across all 6 pillars are fully populated** with exam-grade content — including a second wave of exam-priority services drawn from the official training modules (Persistent Disks, Spot/Sole-tenant VMs, Filestore, Cloud VPN/Router, Shared VPC, VPC Peering, Cloud Identity, Resource Manager, Service Accounts, Org Policy, Security Command Center, Cloud Operations Suite, Audit Logs, Artifact Registry, Cloud Shell/SDK, Cloud Billing, Storage Transfer, Transfer Appliance, Anthos, Datastore).
 
 ## Getting Started
 

@@ -263,6 +263,145 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "persistent-disks",
+        name: "Persistent Disks",
+        icon: "persistent-disks",
+        tagline: "Network block storage for VMs",
+        pairings: ["gce", "gke", "dr-strategy"],
+        detail: {
+          design: [
+            "Durable, network-attached block storage independent of the VM lifecycle — data survives instance stop/delete. Types: pd-standard (HDD), pd-balanced, pd-ssd, and pd-extreme for the highest IOPS.",
+            "Zonal PD lives in one zone; Regional PD synchronously replicates across two zones in a region for HA/DR. Resize up online (never down); performance scales with size and vCPU count.",
+            "Local SSD is physically attached, far faster, but ephemeral — data is lost on stop/terminate; use only for scratch/cache, never durable data.",
+            "Snapshots are incremental and global — restore into any zone/region and share across projects to clone or migrate.",
+          ],
+          security: [
+            "Encrypted at rest by default; supports CMEK (Cloud KMS) and CSEK (customer-supplied) keys.",
+            "HDD-backed disks use AES-128, SSD-backed use AES-256.",
+            "Share snapshots to another project by creating the snapshot directly from the destination project.",
+          ],
+          operations: [
+            "Regional PD is the building block for cross-zone failover of stateful VMs and stateful MIGs.",
+            "Scheduled snapshots automate backups; snapshots convert to images for VM templates.",
+            "Common snapshot uses: change disk type, migrate zones, reduce disk size, seed new environments.",
+          ],
+          keywords: [
+            "durable block storage",
+            "regional PD for cross-zone HA",
+            "incremental snapshots",
+            "resize up only",
+            "local SSD is ephemeral",
+            "CMEK / CSEK on disks",
+          ],
+          antipatterns: [
+            "Shared POSIX file system across many VMs → Filestore, not a single PD.",
+            "Durable data on Local SSD — it is wiped on stop/terminate.",
+            "Object/blob storage or static assets → Cloud Storage.",
+          ],
+        },
+      },
+      {
+        id: "spot-vms",
+        name: "Spot (Preemptible) VMs",
+        icon: "spot-vms",
+        tagline: "Deep-discount interruptible compute",
+        pairings: ["gce", "gke", "cost-optimization"],
+        detail: {
+          design: [
+            "Spare Compute Engine capacity at ~60–91% off on-demand — the go-to cost lever for fault-tolerant, stateless, batch workloads.",
+            "Can be reclaimed by Google at any time with a 30-second preemption notice; Spot has no fixed runtime cap (legacy Preemptible VMs were capped at 24h).",
+            "Best for batch/render/CI, data processing, and stateless workers behind a queue; combine with MIGs and Dataflow/Dataproc for resilience.",
+          ],
+          security: [
+            "Same IAM, service-account and encryption model as standard Compute Engine VMs.",
+            "No security trade-off vs on-demand — the only difference is availability, not isolation.",
+          ],
+          operations: [
+            "Design for interruption: checkpoint work, drain via the shutdown script on the preemption signal, and re-queue tasks.",
+            "In GKE, use Spot node pools with taints/tolerations for interruption-tolerant Pods; mix with on-demand for baseline capacity.",
+            "Not covered by an SLA — never run the only replica of a service on Spot.",
+          ],
+          keywords: [
+            "cheapest / cost-effective batch",
+            "fault-tolerant workloads",
+            "30-second preemption notice",
+            "no SLA",
+            "Spot node pool in GKE",
+          ],
+          antipatterns: [
+            "Stateful or latency-sensitive production services that cannot tolerate sudden termination.",
+            "Databases or any single-replica critical workload.",
+            "Long-running jobs with no checkpointing.",
+          ],
+        },
+      },
+      {
+        id: "sole-tenant",
+        name: "Sole-tenant Nodes",
+        icon: "sole-tenant",
+        tagline: "Dedicated physical hosts for VMs",
+        pairings: ["gce", "compliance-mapping"],
+        detail: {
+          design: [
+            "Dedicated physical Compute Engine servers that run only your project's VMs — no other tenants share the host.",
+            "The answer to physical isolation, compliance/regulatory placement, and Bring-Your-Own-License (per-core/per-socket) requirements.",
+            "Use node affinity / anti-affinity labels to pin or spread specific VMs onto specific node groups.",
+          ],
+          security: [
+            "Hardware-level tenant isolation for workloads that must not share physical hosts.",
+            "Standard CMEK/Shielded/Confidential VM options still apply on top.",
+          ],
+          operations: [
+            "You manage node maintenance policy (restart in place vs live migrate) during host maintenance.",
+            "Priced per node (whole server) regardless of VM packing — right-size to keep utilization high.",
+          ],
+          keywords: [
+            "physical isolation",
+            "BYOL (bring your own license)",
+            "compliance / dedicated hardware",
+            "node affinity labels",
+            "single-tenant host",
+          ],
+          antipatterns: [
+            "General workloads with no isolation/licensing requirement — you pay for a whole server.",
+            "Bursty, spiky demand better served by shared multi-tenant VMs.",
+          ],
+        },
+      },
+      {
+        id: "anthos",
+        name: "Anthos",
+        icon: "anthos",
+        tagline: "Managed hybrid & multi-cloud platform",
+        pairings: ["gke", "cloud-monitoring", "vpc-sc"],
+        detail: {
+          design: [
+            "A managed platform for running and governing GKE consistently across Google Cloud, on-premises (GKE on VMware/bare metal) and other clouds — one control plane, one policy model.",
+            "The classic fit when a case study needs consistent Kubernetes management across multiple, potentially different environments.",
+            "Fleets group clusters; Config Management (GitOps) enforces config and policy centrally; Anthos Service Mesh adds mTLS, traffic management and observability.",
+          ],
+          security: [
+            "Policy Controller enforces guardrails (OPA/Gatekeeper) across the fleet; ASM enforces mTLS between services.",
+            "Central IAM + Config Management keep clusters consistent and auditable everywhere.",
+          ],
+          operations: [
+            "Config Controller / Config Management provide consistent, single-pane management and drift correction via Git.",
+            "ASM enables fault injection, circuit breaking and request timeouts for resiliency testing.",
+          ],
+          keywords: [
+            "hybrid / multi-cloud Kubernetes",
+            "consistent management across environments",
+            "fleets + Config Management (GitOps)",
+            "Anthos Service Mesh (mTLS)",
+            "single control plane",
+          ],
+          antipatterns: [
+            "A single GKE cluster wholly inside Google Cloud — plain GKE is enough.",
+            "Simple stateless containers with no governance/hybrid need → Cloud Run.",
+          ],
+        },
+      },
     ],
   },
 
@@ -526,6 +665,73 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "filestore",
+        name: "Filestore",
+        icon: "filestore",
+        tagline: "Managed NFS file storage",
+        pairings: ["gce", "gke", "cloud-storage"],
+        detail: {
+          design: [
+            "Fully-managed NFSv3 file server — shared POSIX file system mountable by many Compute Engine VMs and GKE Pods at once.",
+            "The answer when an application needs a shared file system / concurrent file access (lift-and-shift NFS, content repos, media rendering, HPC scratch, home directories).",
+            "Tiers: Basic (HDD/SSD), Zonal, Enterprise (regional, higher availability), and High Scale for large throughput — pick on capacity, IOPS/throughput and availability.",
+          ],
+          security: [
+            "Access controlled at the network layer (authorized VPC + IP ranges) plus standard NFS/POSIX permissions.",
+            "Encrypted at rest by default; CMEK supported on Enterprise tier.",
+          ],
+          operations: [
+            "Enterprise tier offers regional (multi-zone) availability and snapshots/backups for the file share.",
+            "Scale capacity/performance by resizing the instance; throughput scales with provisioned capacity.",
+          ],
+          keywords: [
+            "shared / concurrent file system",
+            "managed NFS",
+            "POSIX file access from many VMs",
+            "lift-and-shift NAS",
+            "GKE ReadWriteMany volumes",
+          ],
+          antipatterns: [
+            "Object/blob storage or web assets → Cloud Storage (cheaper, HTTP-native).",
+            "A single VM's boot/data disk → Persistent Disk.",
+            "Structured/relational data → Cloud SQL / Spanner.",
+          ],
+        },
+      },
+      {
+        id: "datastore",
+        name: "Datastore",
+        icon: "datastore",
+        tagline: "Legacy document DB (now Firestore)",
+        pairings: ["firestore", "app-engine"],
+        detail: {
+          design: [
+            "Highly-scalable NoSQL document database — now superseded by Firestore, which runs in \"Datastore mode\" for backwards compatibility.",
+            "For any new design choose Firestore; Datastore mode is for existing App Engine / Datastore apps that need the classic API and strong consistency at scale without the real-time/mobile features.",
+            "Great backend for App Engine apps and for storing entity data like user profiles or game state.",
+          ],
+          security: [
+            "IAM controls at the database level; encrypted at rest by default.",
+            "Datastore mode gives strong consistency for all queries (unlike the old eventual-consistency global queries).",
+          ],
+          operations: [
+            "Serverless and fully managed — automatic multi-region replication and scaling, no capacity planning.",
+            "A project's Firestore database is either Native mode or Datastore mode — the choice is permanent per database.",
+          ],
+          keywords: [
+            "legacy / existing Datastore app",
+            "Firestore in Datastore mode",
+            "App Engine backend",
+            "server-side NoSQL at scale",
+          ],
+          antipatterns: [
+            "New apps, or mobile/web with real-time sync/offline → Firestore Native mode.",
+            "Analytics / SQL over huge datasets → BigQuery.",
+            "High-throughput wide-column time-series → Bigtable.",
+          ],
+        },
+      },
     ],
   },
 
@@ -720,6 +926,138 @@ export const CURRICULUM: Pillar[] = [
           antipatterns: [
             "Need inbound access → use a Load Balancer, not Cloud NAT.",
             "Reaching Google APIs privately → Private Google Access is cheaper than routing via NAT.",
+          ],
+        },
+      },
+      {
+        id: "cloud-vpn",
+        name: "Cloud VPN",
+        icon: "cloud-vpn",
+        tagline: "Encrypted IPsec tunnels to on-prem",
+        pairings: ["cloud-router", "vpc", "hybrid-connectivity"],
+        detail: {
+          design: [
+            "Site-to-site IPsec VPN over the public internet between your VPC and on-prem (or another cloud). HA VPN offers a 99.99% SLA with two interfaces; Classic VPN is single-tunnel (99.9%).",
+            "A regional service, max ~3 Gbps per tunnel (aggregate multiple tunnels for more). The quick, encrypted, low-cost hybrid link — stands up in hours.",
+            "Often the encrypted backup path behind a primary Dedicated/Partner Interconnect.",
+          ],
+          security: [
+            "Traffic is encrypted with IPsec (supports IKEv1 and IKEv2) using pre-shared keys.",
+            "Requires a public IP on the peer gateway; max & recommended MTU is 1460.",
+          ],
+          operations: [
+            "Pair with Cloud Router for dynamic BGP route exchange so new subnets propagate automatically.",
+            "For HA, use HA VPN with two tunnels to separate on-prem devices; never rely on a single tunnel for production.",
+          ],
+          keywords: [
+            "encrypted / IPsec to on-prem",
+            "HA VPN 99.99% SLA",
+            "quick, low-bandwidth hybrid link",
+            "backup for Interconnect",
+            "regional, ~3 Gbps per tunnel",
+          ],
+          antipatterns: [
+            "High, consistent bandwidth or lowest latency, private link → Dedicated/Partner Interconnect.",
+            "Reaching only Google public APIs privately → Private Google Access, not a VPN.",
+          ],
+        },
+      },
+      {
+        id: "cloud-router",
+        name: "Cloud Router",
+        icon: "cloud-router",
+        tagline: "Dynamic BGP routing for hybrid",
+        pairings: ["cloud-vpn", "cloud-interconnect", "cloud-nat"],
+        detail: {
+          design: [
+            "A fully-managed BGP speaker that dynamically exchanges routes between your VPC and on-prem over HA VPN or Cloud Interconnect — no static routes to maintain.",
+            "Newly-added subnets on either side are advertised automatically, so hybrid connectivity keeps working as networks grow.",
+            "Required to make HA VPN and Interconnect dynamic; also the control plane behind Cloud NAT.",
+          ],
+          security: [
+            "Route advertisement can be scoped (advertise specific subnets/ranges) to limit exposure.",
+            "Operates within the VPC/region; combine with firewall rules for traffic control.",
+          ],
+          operations: [
+            "Regional resource — deploy per region where you have hybrid attachments.",
+            "Supports custom route advertisements and graceful failover for HA topologies.",
+          ],
+          keywords: [
+            "dynamic BGP routing",
+            "auto-advertise new subnets",
+            "required for HA VPN / Interconnect",
+            "underpins Cloud NAT",
+          ],
+          antipatterns: [
+            "A tiny static topology that never changes may not need dynamic routing.",
+            "It is not itself a connection — you still need VPN or Interconnect underneath.",
+          ],
+        },
+      },
+      {
+        id: "shared-vpc",
+        name: "Shared VPC",
+        icon: "shared-vpc",
+        tagline: "One network shared across projects",
+        pairings: ["vpc", "iam", "resource-manager"],
+        detail: {
+          design: [
+            "Lets a host project share its VPC subnets with multiple service projects — the most common way to centralize networking while keeping projects separate for security, billing and quota.",
+            "Central network/security team manages the host project (subnets, routes, firewall, VPN/Interconnect); app teams deploy resources into shared subnets from service projects.",
+            "Host and all service projects must belong to the same organization.",
+          ],
+          security: [
+            "Strong separation of duties: service-project admins get only the Network User role (compute.networkUser) — they consume subnets but can't change network config.",
+            "Firewall rules and hybrid connectivity are governed centrally in the host project.",
+          ],
+          operations: [
+            "Connectivity to other networks (VPN/Interconnect) is managed once in the host project and reused by all service projects.",
+            "Scales to many projects without the overhead of managing many separate VPCs.",
+          ],
+          keywords: [
+            "share one network across projects",
+            "host project + service projects",
+            "central network administration",
+            "Network User role",
+            "same organization required",
+          ],
+          antipatterns: [
+            "Connecting VPCs across organizations or peers → VPC Peering / Network Connectivity Center.",
+            "A single project with one network — no sharing needed.",
+          ],
+        },
+      },
+      {
+        id: "vpc-peering",
+        name: "VPC Peering",
+        icon: "vpc-peering",
+        tagline: "Private VPC-to-VPC connectivity",
+        pairings: ["vpc", "shared-vpc", "vpc-connectivity"],
+        detail: {
+          design: [
+            "Connects two VPCs so they communicate using internal IPs, with high throughput and very low latency (traffic stays on Google's network — no VPN gateway).",
+            "Works both within and across organizations; each side chooses which subnet routes to advertise, and IP ranges must not overlap.",
+            "Increasingly required by managed products — Apigee X and Datastream both use peering in their setup.",
+          ],
+          security: [
+            "Administrators on BOTH VPCs must configure the peering for it to activate.",
+            "Firewall rules still apply independently in each VPC; peering exchanges routes, not policy.",
+          ],
+          operations: [
+            "Non-transitive: if A↔B and B↔C are peered, A cannot reach C through B.",
+            "For transitive hub-and-spoke across many VPCs, use Network Connectivity Center instead.",
+          ],
+          keywords: [
+            "private VPC-to-VPC over internal IPs",
+            "non-transitive",
+            "both sides must configure",
+            "non-overlapping CIDRs",
+            "required by Apigee X / Datastream",
+          ],
+          antipatterns: [
+            "Transitive routing through a hub across many VPCs → Network Connectivity Center.",
+            "Sharing one network within an org → Shared VPC.",
+            "Overlapping IP ranges — peering will fail.",
           ],
         },
       },
@@ -926,6 +1264,172 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "cloud-identity",
+        name: "Cloud Identity",
+        icon: "cloud-identity",
+        tagline: "Users, groups & SSO for Google Cloud",
+        pairings: ["iam", "resource-manager", "service-accounts"],
+        detail: {
+          design: [
+            "The IdP that holds your users and groups (the identities IAM grants roles to). An Organization resource requires Cloud Identity or Google Workspace.",
+            "Sync from on-prem Active Directory with Google Cloud Directory Sync (GCDS); federate authentication with SAML SSO (e.g. via AD FS or another IdP).",
+            "Best practice: grant IAM roles to groups, not individual users — manage membership in the IdP.",
+          ],
+          security: [
+            "SSO (SAML) and GCDS are mutually exclusive mechanisms, though commonly used together (GCDS provisions, SSO authenticates).",
+            "Enforce 2-Step Verification, security keys and context-aware access policies centrally.",
+          ],
+          operations: [
+            "Free and Premium editions; Premium adds device management and advanced security controls.",
+            "Deprovisioning a user in the IdP immediately revokes their Google Cloud access.",
+          ],
+          keywords: [
+            "users & groups / identity provider",
+            "GCDS syncs Active Directory",
+            "SAML SSO federation",
+            "required for an Organization",
+            "grant roles to groups",
+          ],
+          antipatterns: [
+            "Using it to authorize service-to-service calls → use service accounts + IAM.",
+            "Hard-coding individual users on resources instead of groups.",
+          ],
+        },
+      },
+      {
+        id: "resource-manager",
+        name: "Resource Manager",
+        icon: "resource-manager",
+        tagline: "Org → Folders → Projects hierarchy",
+        pairings: ["iam", "org-policy", "cloud-billing"],
+        detail: {
+          design: [
+            "Defines the resource hierarchy: Organization → Folders → Projects → resources. This hierarchy is where IAM policies and Organization Policies are attached and inherited.",
+            "Organizations and Folders are technically optional (folders can be nested); every resource belongs to exactly one project.",
+            "Model folders on your org structure (departments, environments) so policy and access inherit cleanly downward.",
+          ],
+          security: [
+            "IAM policy set at any level is inherited by everything below — set broad access high, least privilege low.",
+            "Custom roles can be defined only at the organization or project level, not on folders.",
+          ],
+          operations: [
+            "Projects are the unit of billing, quota and API enablement, and can be moved between folders.",
+            "Use liens and deletion protection to prevent accidental project deletion.",
+          ],
+          keywords: [
+            "Org / Folder / Project hierarchy",
+            "policy inheritance",
+            "single project per resource",
+            "folders map to org structure",
+            "unit of billing & quota",
+          ],
+          antipatterns: [
+            "Flat structure with no folders when you need per-environment/department policy isolation.",
+            "Expecting folder-level custom roles — not supported.",
+          ],
+        },
+      },
+      {
+        id: "service-accounts",
+        name: "Service Accounts",
+        icon: "service-accounts",
+        tagline: "Machine identities for workloads",
+        pairings: ["iam", "gce", "cloud-identity"],
+        detail: {
+          design: [
+            "Non-human identities that applications and VMs use to authenticate to Google Cloud APIs. Attach a least-privilege SA to a workload instead of using user credentials or keys.",
+            "Prefer attached service accounts and Workload Identity (GKE) / Workload Identity Federation (external) over downloaded JSON keys — keys are a top exfiltration risk.",
+            "Use short-lived credentials and impersonation rather than long-lived key files.",
+          ],
+          security: [
+            "A service account is both an identity (granted roles) and a resource (users are granted roles ON it, e.g. Service Account User).",
+            "The Service Account User role lets a principal act as the SA — if that SA is powerful, the user inherits its privileges (a classic privilege-escalation exam trap).",
+          ],
+          operations: [
+            "Rotate/avoid keys; use IAM Recommender to trim over-broad grants.",
+            "Audit usage via Cloud Audit Logs; disable rather than delete when off-boarding a workload.",
+          ],
+          keywords: [
+            "workload / machine identity",
+            "attach least-privilege SA to VM",
+            "Workload Identity (Federation)",
+            "avoid downloaded JSON keys",
+            "Service Account User = escalation",
+          ],
+          antipatterns: [
+            "Embedding long-lived SA key files in code/images.",
+            "Using a single highly-privileged SA for everything.",
+            "Using a service account for interactive human login → Cloud Identity users.",
+          ],
+        },
+      },
+      {
+        id: "org-policy",
+        name: "Organization Policy Service",
+        icon: "org-policy",
+        tagline: "Central guardrails on resource config",
+        pairings: ["resource-manager", "iam", "compliance-mapping"],
+        detail: {
+          design: [
+            "Sets guardrails (constraints) on how resources CAN be configured across the org — complements IAM, which controls WHO can act. Attached at org/folder/project and inherited downward.",
+            "Common constraints: restrict external IPs on VMs, restrict resource locations (data residency), disable service-account key creation, enforce uniform bucket-level access, restrict which VPCs/shared-VPC can be used.",
+            "The right tool when a case study says 'ensure no one can…' regardless of their IAM permissions.",
+          ],
+          security: [
+            "Enforces preventative controls that even project owners cannot bypass (unlike IAM allow-policies).",
+            "Boolean, list (allow/deny), and custom constraints; supports dry-run to test impact.",
+          ],
+          operations: [
+            "Inheritance can be merged or overridden at lower levels where a delegation is intended.",
+            "Pairs with Security Command Center to detect drift from your compliance posture.",
+          ],
+          keywords: [
+            "guardrails / constraints",
+            "restrict external IPs / locations",
+            "disable SA key creation",
+            "'no one can…' regardless of IAM",
+            "data residency / sovereignty",
+          ],
+          antipatterns: [
+            "Controlling who can access a resource → that's IAM, not Org Policy.",
+            "Per-request runtime authorization of app users → IAP.",
+          ],
+        },
+      },
+      {
+        id: "scc",
+        name: "Security Command Center",
+        icon: "scc",
+        tagline: "Central security & risk dashboard",
+        pairings: ["org-policy", "cloud-armor", "compliance-mapping"],
+        detail: {
+          design: [
+            "The centralized security and risk management platform: asset inventory, misconfiguration and vulnerability findings, and threat detection across the organization.",
+            "The answer when a case study needs a single tool to manage security posture and detect vulnerabilities (especially after past breaches / under strict regulation).",
+            "Premium/Enterprise tiers add Event Threat Detection, Security Health Analytics, Web Security Scanner and compliance reports.",
+          ],
+          security: [
+            "Surfaces public buckets, over-permissive IAM, open firewall rules, and known CVEs in your workloads.",
+            "Integrates findings from Cloud Armor, VPC Service Controls and third-party tools.",
+          ],
+          operations: [
+            "Export findings to Pub/Sub / SIEM for automated response; track posture against CIS/PCI/HIPAA benchmarks.",
+            "Continuous scanning gives a live view of drift from your intended security posture.",
+          ],
+          keywords: [
+            "central security posture / risk",
+            "detect misconfigurations & vulnerabilities",
+            "threat detection",
+            "compliance dashboards",
+            "asset inventory",
+          ],
+          antipatterns: [
+            "Blocking L7 web attacks at the edge → Cloud Armor.",
+            "Preventing misconfiguration in the first place → Organization Policy.",
+          ],
+        },
+      },
     ],
   },
 
@@ -1113,6 +1617,234 @@ export const CURRICULUM: Pillar[] = [
           antipatterns: [
             "Bulk one-time analytics load → BigQuery Data Transfer / batch load.",
             "Migrating to an unsupported engine → check supported sources/targets.",
+          ],
+        },
+      },
+      {
+        id: "ops-suite",
+        name: "Cloud Operations Suite",
+        icon: "ops-suite",
+        tagline: "Monitoring, logging, tracing, SRE",
+        pairings: ["cloud-monitoring", "cloud-logging", "audit-logs"],
+        detail: {
+          design: [
+            "The umbrella observability stack (formerly Stackdriver): Cloud Monitoring, Cloud Logging, Cloud Trace, Cloud Profiler and Error Reporting — the basis for SRE practice on Google Cloud.",
+            "Define SLIs and SLOs, dashboards, uptime checks and alerting policies with real notification channels (not just email).",
+            "The modernization answer when a case study relies on ignored email alerts or fragmented on-prem monitoring (Nagios/Grafana/Prometheus).",
+          ],
+          security: [
+            "Integrates Cloud Audit Logs for who-did-what; supports log-based metrics and alerting on security events.",
+            "Managed Service for Prometheus ingests existing Prometheus metrics without self-managed servers.",
+          ],
+          operations: [
+            "Uptime checks + alerting on SLO burn rate catch incidents proactively.",
+            "Cloud Trace (latency), Cloud Profiler (CPU/heap) and Error Reporting (exception grouping) close the loop on performance.",
+          ],
+          keywords: [
+            "SLIs / SLOs / SLAs",
+            "uptime checks & alerting policies",
+            "dashboards + notification channels",
+            "Managed Service for Prometheus",
+            "trace / profiler / error reporting",
+          ],
+          antipatterns: [
+            "Long-term immutable audit retention/export → route Audit Logs to Cloud Storage/BigQuery.",
+            "Edge attack protection → Cloud Armor (different concern).",
+          ],
+        },
+      },
+      {
+        id: "audit-logs",
+        name: "Cloud Audit Logs",
+        icon: "audit-logs",
+        tagline: "Who did what, where and when",
+        pairings: ["cloud-logging", "iam", "compliance-mapping"],
+        detail: {
+          design: [
+            "Records administrative and data-access activity across Google Cloud: Admin Activity, Data Access, System Event and Policy Denied logs.",
+            "Admin Activity logs are always on and free; Data Access logs (except BigQuery) are opt-in and can be high-volume.",
+            "The compliance backbone for answering 'who changed / accessed this resource'.",
+          ],
+          security: [
+            "Immutable and separated by IAM — access controlled via Logging roles distinct from the resources being audited.",
+            "Enable Data Access logs on sensitive services to meet regulatory audit requirements.",
+          ],
+          operations: [
+            "Logs are retained ~400 days in the _Required bucket; export via log sinks to Cloud Storage, BigQuery or Pub/Sub for longer retention and analysis.",
+            "Build log-based metrics and alerts on suspicious admin actions.",
+          ],
+          keywords: [
+            "who did what, when",
+            "Admin Activity (always on) vs Data Access (opt-in)",
+            "export sinks to GCS / BigQuery / Pub/Sub",
+            "regulatory audit trail",
+          ],
+          antipatterns: [
+            "Application/debug logs → Cloud Logging (app logs), not audit logs.",
+            "Relying on default retention for multi-year compliance without an export sink.",
+          ],
+        },
+      },
+      {
+        id: "artifact-registry",
+        name: "Artifact Registry",
+        icon: "artifact-registry",
+        tagline: "Managed container & package repo",
+        pairings: ["cloud-build", "gke", "cloud-deploy"],
+        detail: {
+          design: [
+            "The successor to Container Registry: a single managed home for container images AND language packages (Maven, npm, Python, apt/yum) with regional repositories.",
+            "Central artifact store in a modern CI/CD pipeline (Cloud Build → Artifact Registry → Cloud Deploy → GKE/Cloud Run).",
+            "Prefer it over Container Registry for new work — finer-grained IAM, more formats, and regional control.",
+          ],
+          security: [
+            "Per-repository IAM (vs GCR's bucket-based access); integrates with Binary Authorization to allow only trusted, signed images to deploy.",
+            "Vulnerability scanning on pushed images; CMEK supported.",
+          ],
+          operations: [
+            "Regional/multi-regional repos reduce pull latency and egress; supports remote & virtual repositories for upstream caching.",
+            "Cleanup policies expire old versions to control storage cost.",
+          ],
+          keywords: [
+            "container images + packages",
+            "successor to Container Registry",
+            "per-repo IAM",
+            "Binary Authorization + vuln scanning",
+            "regional repositories",
+          ],
+          antipatterns: [
+            "Storing large binary build outputs/backups → Cloud Storage.",
+            "Sticking with Container Registry for new pipelines (being deprecated).",
+          ],
+        },
+      },
+      {
+        id: "cloud-shell",
+        name: "Cloud Shell & SDK",
+        icon: "cloud-shell",
+        tagline: "Browser CLI and gcloud tooling",
+        pairings: ["cloud-build", "iac"],
+        detail: {
+          design: [
+            "Cloud Shell is a free, browser-based ephemeral VM pre-loaded with the gcloud CLI, kubectl, Terraform, editors and 5 GB of persistent $HOME — instant admin access with no local setup.",
+            "The Cloud SDK (gcloud, gsutil, bq) is the scriptable interface to Google Cloud for automation and CI.",
+            "Use for quick admin, labs, and file up/download to/from your local machine via the browser.",
+          ],
+          security: [
+            "Runs as your identity with your IAM permissions; no keys to manage in the browser session.",
+            "Ephemeral compute is recycled after inactivity — nothing sensitive persists on the VM beyond $HOME.",
+          ],
+          operations: [
+            "Great for one-off operations and troubleshooting; for repeatable infra prefer IaC (Terraform / Infrastructure Manager).",
+            "gcloud config configurations switch between projects/accounts quickly.",
+          ],
+          keywords: [
+            "browser-based CLI",
+            "gcloud / gsutil / bq",
+            "no local setup",
+            "up/download files to local",
+            "ephemeral VM + 5 GB home",
+          ],
+          antipatterns: [
+            "Running production workloads on the ephemeral Cloud Shell VM.",
+            "Manual clicks/commands for infra that should be codified → IaC.",
+          ],
+        },
+      },
+      {
+        id: "cloud-billing",
+        name: "Cloud Billing",
+        icon: "cloud-billing",
+        tagline: "Accounts, budgets & cost export",
+        pairings: ["resource-manager", "cost-optimization", "bigquery"],
+        detail: {
+          design: [
+            "A Billing Account pays for one or more projects; projects with different billing accounts are billed separately — a lever for chargeback and cost isolation.",
+            "Set budgets with threshold alerts per project or account; export detailed billing data to BigQuery for analysis.",
+            "The answer for cost visibility, chargeback, and preventing per-project/per-developer budget overrun.",
+          ],
+          security: [
+            "Billing IAM roles (Billing Account Admin/User) are separate from resource IAM — separation of financial and technical duties.",
+            "Link/unlink projects to control who can incur spend.",
+          ],
+          operations: [
+            "Budgets trigger alerts (and optional Pub/Sub automation) but do NOT hard-cap spend by default.",
+            "BigQuery billing export + Looker/Data Studio dashboards give granular cost attribution by label.",
+          ],
+          keywords: [
+            "billing account vs project",
+            "budgets & threshold alerts",
+            "billing export to BigQuery",
+            "chargeback / separate billing",
+            "cost by label",
+          ],
+          antipatterns: [
+            "Expecting budgets to automatically stop spend — they alert, not cap.",
+            "Using resource IAM roles to control billing access.",
+          ],
+        },
+      },
+      {
+        id: "storage-transfer",
+        name: "Storage Transfer Service",
+        icon: "storage-transfer",
+        tagline: "Managed online data transfer to GCS",
+        pairings: ["cloud-storage", "transfer-appliance", "migration-path"],
+        detail: {
+          design: [
+            "Managed, scheduled, online transfer of large datasets into Cloud Storage — from other clouds (S3/Azure), from on-prem file systems, or between GCS buckets.",
+            "Use when the network can move the data in reasonable time; supports incremental syncs, filters and bandwidth control.",
+            "For on-prem, the Transfer Service for on-premises agent handles very large file-system transfers.",
+          ],
+          security: [
+            "Runs as a Google-managed service with IAM-scoped access to source and destination.",
+            "Preserves metadata; supports delete-after-transfer and overwrite policies.",
+          ],
+          operations: [
+            "Scheduling + incremental copies keep buckets in sync (e.g. recurring cross-cloud replication).",
+            "Managed retries and integrity checks — no self-built gsutil scripting to maintain.",
+          ],
+          keywords: [
+            "online transfer to Cloud Storage",
+            "from S3 / Azure / on-prem",
+            "scheduled & incremental sync",
+            "bucket-to-bucket migration",
+          ],
+          antipatterns: [
+            "Petabytes where the network would take months → Transfer Appliance (offline).",
+            "Live relational database migration → Database Migration Service.",
+          ],
+        },
+      },
+      {
+        id: "transfer-appliance",
+        name: "Transfer Appliance",
+        icon: "transfer-appliance",
+        tagline: "Offline bulk data shipping",
+        pairings: ["cloud-storage", "storage-transfer", "migration-path"],
+        detail: {
+          design: [
+            "A physical, ruggedized storage device Google ships to you; you fill it and ship it back, and the data is loaded into Cloud Storage — the answer when data is huge and bandwidth is the bottleneck.",
+            "Classic exam trigger: hundreds of TB / PB that would take weeks-to-months over the available uplink.",
+            "Capacities from tens to hundreds of TB per appliance; order multiple for larger jobs.",
+          ],
+          security: [
+            "Data is encrypted on the appliance with a customer-held key; it cannot be read without your key.",
+            "Chain-of-custody handling to the ingest facility.",
+          ],
+          operations: [
+            "Timeline is dominated by shipping, not network — plan for transit days.",
+            "After ingest, use Storage Transfer Service for ongoing incremental syncs.",
+          ],
+          keywords: [
+            "offline / physical shipping",
+            "petabytes, bandwidth-constrained",
+            "weeks/months over the network",
+            "encrypted appliance",
+          ],
+          antipatterns: [
+            "Data the network can move in reasonable time → Storage Transfer Service (online).",
+            "Ongoing continuous replication → an online transfer, not a one-time appliance.",
           ],
         },
       },
