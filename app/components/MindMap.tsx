@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   ChevronDown,
   Gauge,
+  GitBranch,
   GraduationCap,
   Layers,
   Lightbulb,
@@ -27,6 +28,7 @@ import { FlashcardMode } from "./FlashcardMode";
 import { StudyPlanMode } from "./StudyPlanMode";
 import { ExamTipsMode } from "./ExamTipsMode";
 import { CaseStudyExplorer } from "./CaseStudyExplorer";
+import { ArchitecturePatterns } from "./ArchitecturePatterns";
 import { ReadinessDashboard } from "./ReadinessDashboard";
 
 type ConfidenceMap = Record<string, Confidence>;
@@ -182,6 +184,7 @@ export function MindMap() {
   const [flashcardDeck, setFlashcardDeck] = useState<string | null>(null);
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [explorerInitial, setExplorerInitial] = useState<string | null>(null);
+  const [archOpen, setArchOpen] = useState(false);
   const [studyPlanOpen, setStudyPlanOpen] = useState(false);
   const [examTipsOpen, setExamTipsOpen] = useState(false);
   const [readinessOpen, setReadinessOpen] = useState(false);
@@ -397,6 +400,13 @@ export function MindMap() {
             >
               <Layers className="h-4 w-4" />
               <span className="hidden sm:inline">Case Studies</span>
+            </button>
+            <button
+              onClick={() => setArchOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-cyan-500/50 bg-cyan-500/15 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 transition-colors hover:bg-cyan-500/25"
+            >
+              <GitBranch className="h-4 w-4" />
+              <span className="hidden sm:inline">Architectures</span>
             </button>
             <button
               onClick={() => setQuizOpen(true)}
@@ -646,6 +656,17 @@ export function MindMap() {
             setExplorerOpen(false);
             setExplorerInitial(null);
           }}
+        />
+      )}
+
+      {/* ── Architecture Patterns overlay ──────────────────────────────── */}
+      {archOpen && (
+        <ArchitecturePatterns
+          onReview={(id) => {
+            setArchOpen(false);
+            setSelectedId(id);
+          }}
+          onClose={() => setArchOpen(false)}
         />
       )}
 
