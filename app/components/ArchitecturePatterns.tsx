@@ -34,6 +34,7 @@ const ACCENT: Record<
     ring: string;
     edge: string;
     arrow: string;
+    sel: string;
   }
 > = {
   cyan: {
@@ -43,6 +44,7 @@ const ACCENT: Record<
     ring: "border-cyan-500/30 bg-cyan-500/[0.04]",
     edge: "stroke-cyan-400/35",
     arrow: "fill-cyan-400/55",
+    sel: "border-cyan-400 bg-cyan-500/20 text-cyan-50",
   },
   emerald: {
     text: "text-emerald-400",
@@ -51,6 +53,7 @@ const ACCENT: Record<
     ring: "border-emerald-500/30 bg-emerald-500/[0.04]",
     edge: "stroke-emerald-400/35",
     arrow: "fill-emerald-400/55",
+    sel: "border-emerald-400 bg-emerald-500/20 text-emerald-50",
   },
   sky: {
     text: "text-sky-400",
@@ -59,6 +62,7 @@ const ACCENT: Record<
     ring: "border-sky-500/30 bg-sky-500/[0.04]",
     edge: "stroke-sky-400/35",
     arrow: "fill-sky-400/55",
+    sel: "border-sky-400 bg-sky-500/20 text-sky-50",
   },
   amber: {
     text: "text-amber-400",
@@ -67,6 +71,7 @@ const ACCENT: Record<
     ring: "border-amber-500/30 bg-amber-500/[0.04]",
     edge: "stroke-amber-400/35",
     arrow: "fill-amber-400/55",
+    sel: "border-amber-400 bg-amber-500/20 text-amber-50",
   },
   fuchsia: {
     text: "text-fuchsia-400",
@@ -75,6 +80,7 @@ const ACCENT: Record<
     ring: "border-fuchsia-500/30 bg-fuchsia-500/[0.04]",
     edge: "stroke-fuchsia-400/35",
     arrow: "fill-fuchsia-400/55",
+    sel: "border-fuchsia-400 bg-fuchsia-500/20 text-fuchsia-50",
   },
   rose: {
     text: "text-rose-400",
@@ -83,6 +89,7 @@ const ACCENT: Record<
     ring: "border-rose-500/30 bg-rose-500/[0.04]",
     edge: "stroke-rose-400/35",
     arrow: "fill-rose-400/55",
+    sel: "border-rose-400 bg-rose-500/20 text-rose-50",
   },
 };
 
@@ -244,11 +251,12 @@ export function ArchitecturePatterns({
                 <Layers className="h-4 w-4 text-zinc-500" />
                 The architecture
                 <span className="font-normal normal-case tracking-normal text-zinc-600">
-                  — click any service node to open it
+                  — click a node for its role here
                 </span>
               </h3>
 
               <ArchGraph
+                key={pattern.id}
                 pattern={pattern}
                 accent={accent}
                 onReview={onReview}
@@ -387,6 +395,10 @@ interface PlacedNode {
   node: ArchNode;
   x: number;
   y: number;
+  /** Stage (column) index. */
+  s: number;
+  /** Node index within the stage. */
+  n: number;
 }
 
 function ArchGraph({
@@ -398,6 +410,10 @@ function ArchGraph({
   accent: Accent;
   onReview: (serviceId: string) => void;
 }) {
+  // Which node's context card is open — keyed by stage+node index, since one
+  // service can appear in several stages (e.g. Cloud Storage in Store & Archive).
+  const [sel, setSel] = useState<{ s: number; n: number } | null>(null);
+
   const { columns, edges, width, height } = useMemo(() => {
     const stages = pattern.stages;
     const maxCount = Math.max(...stages.map((s) => s.nodes.length));
@@ -413,6 +429,8 @@ function ArchGraph({
         node,
         x,
         y: startY + j * (NODE_H + ROW_GAP),
+        s: i,
+        n: j,
       }));
     });
 
@@ -442,109 +460,239 @@ function ArchGraph({
   }, [pattern]);
 
   const arrowId = `arrow-${pattern.id}`;
+  const selPlaced = sel ? columns[sel.s]?.[sel.n] ?? null : null;
 
   return (
-    <div className="overflow-x-auto pb-1">
-      <div
-        className="relative mx-auto"
-        style={{ width, height, minWidth: width }}
-      >
-        {/* Edge layer */}
-        <svg
-          width={width}
-          height={height}
-          className="absolute inset-0"
-          aria-hidden="true"
+    <>
+      <div className="overflow-x-auto pb-1">
+        <div
+          className="relative mx-auto"
+          style={{ width, height, minWidth: width }}
         >
-          <defs>
-            <marker
-              id={arrowId}
-              markerWidth="7"
-              markerHeight="7"
-              refX="5.5"
-              refY="3"
-              orient="auto"
-              markerUnits="userSpaceOnUse"
+          {/* Edge layer */}
+          <svg
+            width={width}
+            height={height}
+            className="absolute inset-0"
+            aria-hidden="true"
+          >
+            <defs>
+              <marker
+                id={arrowId}
+                markerWidth="7"
+                markerHeight="7"
+                refX="5.5"
+                refY="3"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path d="M0,0 L6,3 L0,6 Z" className={accent.arrow} />
+              </marker>
+            </defs>
+            {edges.map((e) => (
+              <path
+                key={e.key}
+                d={e.d}
+                fill="none"
+                strokeWidth={1.5}
+                className={accent.edge}
+                markerEnd={`url(#${arrowId})`}
+              />
+            ))}
+          </svg>
+
+          {/* Stage labels */}
+          {pattern.stages.map((stage, i) => (
+            <div
+              key={i}
+              className={`absolute text-center text-[10px] font-bold uppercase tracking-wider ${accent.text}`}
+              style={{ left: PAD + i * COL_STEP, top: 0, width: NODE_W }}
             >
-              <path d="M0,0 L6,3 L0,6 Z" className={accent.arrow} />
-            </marker>
-          </defs>
-          {edges.map((e) => (
-            <path
-              key={e.key}
-              d={e.d}
-              fill="none"
-              strokeWidth={1.5}
-              className={accent.edge}
-              markerEnd={`url(#${arrowId})`}
+              {i + 1}. {stage.label}
+            </div>
+          ))}
+
+          {/* Node layer */}
+          {columns.flat().map((p) => (
+            <GraphNode
+              key={`${p.s}:${p.n}`}
+              placed={p}
+              accent={accent}
+              selected={sel?.s === p.s && sel?.n === p.n}
+              onSelect={() =>
+                setSel((cur) =>
+                  cur && cur.s === p.s && cur.n === p.n
+                    ? null
+                    : { s: p.s, n: p.n },
+                )
+              }
             />
           ))}
-        </svg>
-
-        {/* Stage labels */}
-        {pattern.stages.map((stage, i) => (
-          <div
-            key={i}
-            className={`absolute text-center text-[10px] font-bold uppercase tracking-wider ${accent.text}`}
-            style={{ left: PAD + i * COL_STEP, top: 0, width: NODE_W }}
-          >
-            {i + 1}. {stage.label}
-          </div>
-        ))}
-
-        {/* Node layer */}
-        {columns.flat().map((p, i) => (
-          <GraphNode
-            key={i}
-            placed={p}
-            accentChip={accent.chip}
-            onReview={onReview}
-          />
-        ))}
+        </div>
       </div>
-    </div>
+
+      {/* Contextual card for the selected node */}
+      {selPlaced && sel && (
+        <NodeContextCard
+          node={selPlaced.node}
+          stage={pattern.stages[sel.s]}
+          stageIndex={sel.s}
+          pattern={pattern}
+          accent={accent}
+          onReview={onReview}
+          onClose={() => setSel(null)}
+        />
+      )}
+    </>
   );
 }
 
 function GraphNode({
   placed,
-  accentChip,
-  onReview,
+  accent,
+  selected,
+  onSelect,
 }: {
   placed: PlacedNode;
-  accentChip: string;
-  onReview: (serviceId: string) => void;
+  accent: Accent;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const { node, x, y } = placed;
   const svc = node.id ? SERVICE_INDEX[node.id] : undefined;
   const label = nodeLabel(node);
   const style = { left: x, top: y, width: NODE_W, height: NODE_H } as const;
+  const Icon = svc ? iconFor(svc.icon) : Boxes;
 
-  // Not a real service node (e.g. Eventarc) → static, dashed reference node.
-  if (!svc) {
-    return (
-      <div
-        className="absolute flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-zinc-900/50 px-2.5 text-[11px] leading-tight text-zinc-400"
-        style={style}
-        title={`${label} (not a mapped node)`}
-      >
-        <Boxes className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
-        <span className="line-clamp-2">{label}</span>
-      </div>
-    );
-  }
+  const base =
+    "absolute flex items-center gap-1.5 rounded-lg border px-2.5 text-left text-[11px] font-medium leading-tight shadow-sm transition-colors";
+  const rest = svc
+    ? selected
+      ? accent.sel
+      : `border-zinc-700 bg-zinc-900/80 text-zinc-200 ${accent.chip}`
+    : selected
+      ? `${accent.sel} border-dashed`
+      : "border-dashed border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-500";
 
-  const Icon = iconFor(svc.icon);
   return (
     <button
-      onClick={() => onReview(svc.id)}
-      title={`Open ${svc.name}`}
-      className={`absolute flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/80 px-2.5 text-left text-[11px] font-medium leading-tight text-zinc-200 shadow-sm transition-colors ${accentChip}`}
+      onClick={onSelect}
+      title={svc ? svc.name : `${label} (referenced service)`}
+      className={`${base} ${rest}`}
       style={style}
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="line-clamp-2">{label}</span>
     </button>
+  );
+}
+
+function NodeContextCard({
+  node,
+  stage,
+  stageIndex,
+  pattern,
+  accent,
+  onReview,
+  onClose,
+}: {
+  node: ArchNode;
+  stage: ArchPattern["stages"][number];
+  stageIndex: number;
+  pattern: ArchPattern;
+  accent: Accent;
+  onReview: (serviceId: string) => void;
+  onClose: () => void;
+}) {
+  const svc = node.id ? SERVICE_INDEX[node.id] : undefined;
+  const label = nodeLabel(node);
+  const Icon = svc ? iconFor(svc.icon) : Boxes;
+  const hay = (svc?.name ?? label).toLowerCase();
+  const relatedVariants = (pattern.variants ?? []).filter(
+    (v) =>
+      v.swap.toLowerCase().includes(hay) || v.when.toLowerCase().includes(hay),
+  );
+
+  return (
+    <div className={`relative rounded-xl border p-4 ${accent.ring}`}>
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-2 top-2 rounded-md p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="flex items-start gap-3 pr-6">
+        <div className="rounded-lg bg-zinc-800/80 p-2">
+          <Icon className={`h-5 w-5 ${accent.text}`} />
+        </div>
+        <div className="min-w-0">
+          <p
+            className={`text-[10px] font-semibold uppercase tracking-wider ${accent.text}`}
+          >
+            Stage {stageIndex + 1} · {stage.label}
+          </p>
+          <h4 className="text-sm font-bold text-zinc-50">
+            {svc ? svc.name : label}
+          </h4>
+          {svc && (
+            <p className="text-[11px] text-zinc-500">
+              {svc.pillarName}
+              {svc.tagline ? ` · ${svc.tagline}` : ""}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Role in this architecture */}
+      <div className="mt-3 space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          Its job in this pipeline
+        </p>
+        <p className="text-xs leading-relaxed text-zinc-300">{stage.role}</p>
+      </div>
+
+      {/* Swap context, if this node participates in a variant */}
+      {relatedVariants.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sky-400">
+            <Shuffle className="h-3.5 w-3.5" />
+            Swap options for this scenario
+          </p>
+          <ul className="space-y-1.5">
+            {relatedVariants.map((v, i) => (
+              <li
+                key={i}
+                className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-2.5 py-1.5 text-[11px] leading-relaxed"
+              >
+                <span className="text-zinc-400">If </span>
+                <span className="text-zinc-200">{v.when}</span>
+                <span className="text-zinc-600"> — </span>
+                <span className="font-medium text-sky-300">{v.swap}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* CTA */}
+      <div className="mt-4">
+        {svc ? (
+          <button
+            onClick={() => onReview(svc.id)}
+            className={`flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-200 transition-colors ${accent.chip}`}
+          >
+            Open full service detail
+            <span className={accent.text}>→</span>
+          </button>
+        ) : (
+          <p className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/40 px-3 py-2 text-[11px] text-zinc-500">
+            Referenced service — not yet a standalone node in this map.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
