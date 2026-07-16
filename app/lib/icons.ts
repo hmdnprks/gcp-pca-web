@@ -37,6 +37,7 @@ import {
   PiggyBank,
   Network,
   Package,
+  PlugZap,
   Radio,
   Rocket,
   Route,
@@ -45,6 +46,7 @@ import {
   ScanEye,
   ScrollText,
   Server,
+  ServerCog,
   Settings2,
   Share2,
   Shield,
@@ -54,6 +56,7 @@ import {
   Ship,
   Shuffle,
   Sparkles,
+  Spline,
   Split,
   Table2,
   Terminal,
@@ -61,6 +64,7 @@ import {
   Users,
   UserCog,
   Waypoints,
+  Webhook,
   Wind,
   Workflow,
   Wrench,
@@ -112,6 +116,8 @@ const ICONS: Record<string, LucideIcon> = {
   "cloud-router": Router,
   "shared-vpc": Share2,
   "vpc-peering": ArrowRightLeft,
+  "private-google-access": Spline,
+  "private-service-connect": PlugZap,
 
   // Security
   iam: KeyRound,
@@ -140,6 +146,7 @@ const ICONS: Record<string, LucideIcon> = {
   "cloud-billing": CreditCard,
   "storage-transfer": FolderInput,
   "transfer-appliance": Truck,
+  "migrate-to-vms": ServerCog,
 
   // Data & AI
   pubsub: Radio,
@@ -150,6 +157,7 @@ const ICONS: Record<string, LucideIcon> = {
   "ai-apis": ScanEye,
   composer: Wind,
   datafusion: Combine,
+  eventarc: Webhook,
 
   // Decision guides
   "decision-guides": Route,

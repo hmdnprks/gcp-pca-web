@@ -1061,6 +1061,71 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "private-google-access",
+        name: "Private Google Access",
+        icon: "private-google-access",
+        tagline: "Reach Google APIs without external IPs",
+        pairings: ["vpc", "cloud-nat", "private-service-connect"],
+        detail: {
+          design: [
+            "A per-subnet setting that lets VMs with NO external IP reach Google APIs and services (Cloud Storage, BigQuery, etc.) over Google's internal network instead of the public internet.",
+            "The standard answer for 'private VMs still need to call Google APIs' — no public IPs and no internet NAT required for Google-bound traffic.",
+            "A variant, Private Google Access for on-premises hosts, reaches Google APIs from the datacenter through VPN/Interconnect via the restricted/private VIPs.",
+          ],
+          security: [
+            "Keeps API traffic off the public internet and lets you drop external IPs entirely, shrinking the attack surface.",
+            "Pair with VPC Service Controls and the restricted.googleapis.com VIP to block data exfiltration to non-allowed Google resources.",
+          ],
+          operations: [
+            "Enabled per-subnet; the VM needs a route to the Google API ranges but no external IP.",
+            "For DNS, map *.googleapis.com to the private/restricted VIP so requests resolve internally.",
+          ],
+          keywords: [
+            "VMs with no external IP calling Google APIs",
+            "per-subnet setting",
+            "private.googleapis.com / restricted.googleapis.com VIP",
+            "on-prem access to Google APIs over VPN/Interconnect",
+          ],
+          antipatterns: [
+            "Reaching third-party/on-prem or published services privately → Private Service Connect, not PGA.",
+            "Giving instances public egress to the internet → Cloud NAT (a different need).",
+          ],
+        },
+      },
+      {
+        id: "private-service-connect",
+        name: "Private Service Connect",
+        icon: "private-service-connect",
+        tagline: "Private endpoints to services & APIs",
+        pairings: ["vpc", "private-google-access", "cloud-lb"],
+        detail: {
+          design: [
+            "Creates a private endpoint (an internal IP in your VPC) that connects to Google APIs, your own published services, or a third party's service — traffic never traverses the public internet or requires VPC peering.",
+            "Solves 'consume a service in another VPC/org privately, with no overlapping-IP or transitivity headaches' — the gap VPC Peering can't cleanly fill.",
+            "Flavors: PSC for Google APIs, PSC endpoints to a producer's published service, and PSC for published services (where you are the producer behind an internal load balancer).",
+          ],
+          security: [
+            "Keeps service traffic on Google's network with a private IP — no external exposure and no broad network merge as with peering.",
+            "Access is explicit per endpoint/service, giving a cleaner trust boundary than route-exchanging peering.",
+          ],
+          operations: [
+            "Consumer creates an endpoint; producer publishes a service behind an internal load balancer — decoupled and independently scaled.",
+            "Consumer and producer IP ranges don't need to align, avoiding CIDR collisions.",
+          ],
+          keywords: [
+            "private endpoint / internal IP to a service",
+            "no VPC peering, no overlapping-IP problems",
+            "consumer ↔ producer service model",
+            "private access to Google APIs (PSC)",
+            "SaaS / cross-org private connectivity",
+          ],
+          antipatterns: [
+            "Full bidirectional connectivity between two VPCs → VPC Peering / Network Connectivity Center.",
+            "Just letting no-external-IP VMs call Google APIs on a subnet → Private Google Access is simpler.",
+          ],
+        },
+      },
     ],
   },
 
@@ -1848,6 +1913,40 @@ export const CURRICULUM: Pillar[] = [
           ],
         },
       },
+      {
+        id: "migrate-to-vms",
+        name: "Migrate to Virtual Machines",
+        icon: "migrate-to-vms",
+        tagline: "Lift-and-shift servers to Compute Engine",
+        pairings: ["gce", "cloud-interconnect", "migration-path"],
+        detail: {
+          design: [
+            "Google's tool (formerly Migrate for Compute Engine / Velostrata) to rehost physical servers and VMs from on-prem, VMware, AWS or Azure onto Compute Engine with minimal downtime.",
+            "The 'lift-and-shift / rehost' answer: stream the workload up, cut over quickly, then modernize afterward (re-platform to managed services or containers).",
+            "Supports wave-based migration of many VMs and test-clones a workload for validation before the production cutover.",
+          ],
+          security: [
+            "Runs migrations over a private link (VPN/Interconnect) with IAM-scoped service accounts; no migration agents remain baked into the final image.",
+            "Test-clone into an isolated VPC to validate before touching production.",
+          ],
+          operations: [
+            "Streaming migration keeps the source running while data replicates, so cutover downtime is short.",
+            "Group VMs into migration waves and roll back cleanly if validation fails.",
+          ],
+          keywords: [
+            "rehost / lift-and-shift VMs",
+            "on-prem / VMware / AWS / Azure → Compute Engine",
+            "minimal-downtime streaming migration",
+            "wave-based, test-clone before cutover",
+            "formerly Migrate for Compute Engine / Velostrata",
+          ],
+          antipatterns: [
+            "Near-zero-downtime database migration → Database Migration Service.",
+            "Moving bulk file/object data → Storage Transfer Service / Transfer Appliance.",
+            "Re-architecting to containers up front → GKE / Cloud Run (this is rehost, not refactor).",
+          ],
+        },
+      },
     ],
   },
 
@@ -2105,6 +2204,39 @@ export const CURRICULUM: Pillar[] = [
           antipatterns: [
             "Complex custom streaming logic → Dataflow (Beam).",
             "Pure orchestration of existing jobs → Cloud Composer.",
+          ],
+        },
+      },
+      {
+        id: "eventarc",
+        name: "Eventarc",
+        icon: "eventarc",
+        tagline: "Route CloudEvents to serverless targets",
+        pairings: ["pubsub", "cloud-run", "cloud-functions"],
+        detail: {
+          design: [
+            "A managed eventing layer that delivers events as CloudEvents from 90+ Google Cloud sources (Cloud Storage, Firestore, BigQuery, Pub/Sub, Audit Logs) to targets like Cloud Run, Cloud Functions and GKE.",
+            "The glue for event-driven architectures: 'when X happens in GCP, run this handler' — without writing polling or plumbing.",
+            "Two source types: direct provider events, and Audit-Log-based events that fire on any admin/data-access activity you can audit.",
+          ],
+          security: [
+            "Uses a per-trigger service account with least-privilege IAM; events are delivered over Google's network.",
+            "Audit-Log-based triggers let you react to sensitive actions (e.g. a bucket made public) for automated remediation.",
+          ],
+          operations: [
+            "Built on Pub/Sub under the hood — retries with at-least-once delivery; add a dead-letter topic for poison events.",
+            "Event filters route only what each target cares about, keeping handlers focused.",
+          ],
+          keywords: [
+            "\"when a file lands / a row is written, trigger…\"",
+            "CloudEvents from 90+ sources",
+            "Audit-Log-based triggers",
+            "targets: Cloud Run / Functions / GKE",
+            "event-driven, no polling",
+          ],
+          antipatterns: [
+            "High-throughput app-to-app messaging you fully control → Pub/Sub directly.",
+            "Scheduled / time-based jobs → Cloud Scheduler, not event triggers.",
           ],
         },
       },

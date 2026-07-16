@@ -278,7 +278,7 @@ export const ARCHITECTURES: ArchPattern[] = [
       {
         label: "Route",
         role: "Deliver CloudEvents from 90+ sources (GCS, Firestore, Audit Logs) to handlers.",
-        nodes: [{ label: "Eventarc" }],
+        nodes: [{ id: "eventarc" }],
       },
       {
         label: "Compute",
@@ -348,8 +348,8 @@ export const ARCHITECTURES: ArchPattern[] = [
         label: "Reach Google APIs privately",
         role: "Access managed services without traversing the public internet.",
         nodes: [
-          { label: "Private Google Access" },
-          { label: "Private Service Connect" },
+          { id: "private-google-access" },
+          { id: "private-service-connect" },
         ],
       },
     ],
@@ -388,7 +388,7 @@ export const ARCHITECTURES: ArchPattern[] = [
       {
         label: "Rehost VMs",
         role: "Lift-and-shift servers, modernize later.",
-        nodes: [{ label: "Migrate to Virtual Machines" }],
+        nodes: [{ id: "migrate-to-vms" }],
       },
       {
         label: "Migrate databases",
