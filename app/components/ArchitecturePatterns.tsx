@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   Boxes,
   GitBranch,
   Layers,
@@ -28,45 +27,66 @@ import { iconFor } from "../lib/icons";
 // Tailwind can't see dynamically-built class names, so map accents explicitly.
 const ACCENT: Record<
   string,
-  { text: string; dot: string; chip: string; ring: string }
+  {
+    text: string;
+    dot: string;
+    chip: string;
+    ring: string;
+    edge: string;
+    arrow: string;
+  }
 > = {
   cyan: {
     text: "text-cyan-400",
     dot: "bg-cyan-500",
-    chip: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-100",
+    chip: "hover:border-cyan-500/60 hover:bg-cyan-500/10 hover:text-cyan-100",
     ring: "border-cyan-500/30 bg-cyan-500/[0.04]",
+    edge: "stroke-cyan-400/35",
+    arrow: "fill-cyan-400/55",
   },
   emerald: {
     text: "text-emerald-400",
     dot: "bg-emerald-500",
-    chip: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-100",
+    chip: "hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-100",
     ring: "border-emerald-500/30 bg-emerald-500/[0.04]",
+    edge: "stroke-emerald-400/35",
+    arrow: "fill-emerald-400/55",
   },
   sky: {
     text: "text-sky-400",
     dot: "bg-sky-500",
-    chip: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-100",
+    chip: "hover:border-sky-500/60 hover:bg-sky-500/10 hover:text-sky-100",
     ring: "border-sky-500/30 bg-sky-500/[0.04]",
+    edge: "stroke-sky-400/35",
+    arrow: "fill-sky-400/55",
   },
   amber: {
     text: "text-amber-400",
     dot: "bg-amber-500",
-    chip: "hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-100",
+    chip: "hover:border-amber-500/60 hover:bg-amber-500/10 hover:text-amber-100",
     ring: "border-amber-500/30 bg-amber-500/[0.04]",
+    edge: "stroke-amber-400/35",
+    arrow: "fill-amber-400/55",
   },
   fuchsia: {
     text: "text-fuchsia-400",
     dot: "bg-fuchsia-500",
-    chip: "hover:border-fuchsia-500/50 hover:bg-fuchsia-500/10 hover:text-fuchsia-100",
+    chip: "hover:border-fuchsia-500/60 hover:bg-fuchsia-500/10 hover:text-fuchsia-100",
     ring: "border-fuchsia-500/30 bg-fuchsia-500/[0.04]",
+    edge: "stroke-fuchsia-400/35",
+    arrow: "fill-fuchsia-400/55",
   },
   rose: {
     text: "text-rose-400",
     dot: "bg-rose-500",
-    chip: "hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-100",
+    chip: "hover:border-rose-500/60 hover:bg-rose-500/10 hover:text-rose-100",
     ring: "border-rose-500/30 bg-rose-500/[0.04]",
+    edge: "stroke-rose-400/35",
+    arrow: "fill-rose-400/55",
   },
 };
+
+type Accent = (typeof ACCENT)[string];
 
 const fallback = ACCENT.cyan;
 const accentOf = (category: string) =>
@@ -218,48 +238,34 @@ export function ArchitecturePatterns({
               {pattern.problem}
             </p>
 
-            {/* The flow */}
+            {/* The flow — node-link graph */}
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 <Layers className="h-4 w-4 text-zinc-500" />
-                The architecture (click any service to open its node)
+                The architecture
+                <span className="font-normal normal-case tracking-normal text-zinc-600">
+                  — click any service node to open it
+                </span>
               </h3>
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
+
+              <ArchGraph
+                pattern={pattern}
+                accent={accent}
+                onReview={onReview}
+              />
+
+              {/* Stage legend (what each column does) */}
+              <div className="grid gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900/30 p-3 sm:grid-cols-2">
                 {pattern.stages.map((stage, si) => (
-                  <div
+                  <p
                     key={si}
-                    className="flex items-stretch gap-2 lg:flex-1"
+                    className="text-[11px] leading-snug text-zinc-400"
                   >
-                    <div
-                      className={`flex-1 rounded-xl border p-3 ${accent.ring}`}
-                    >
-                      <div className="flex items-baseline gap-2">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wider ${accent.text}`}
-                        >
-                          {si + 1}. {stage.label}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[11px] leading-snug text-zinc-400">
-                        {stage.role}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {stage.nodes.map((n, ni) => (
-                          <NodeChip
-                            key={ni}
-                            node={n}
-                            accentChip={accent.chip}
-                            onReview={onReview}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    {si < pattern.stages.length - 1 && (
-                      <div className="flex shrink-0 items-center justify-center text-zinc-600">
-                        <ArrowRight className="h-4 w-4 rotate-90 lg:rotate-0" />
-                      </div>
-                    )}
-                  </div>
+                    <span className={`font-semibold ${accent.text}`}>
+                      {si + 1}. {stage.label}
+                    </span>{" "}
+                    — {stage.role}
+                  </p>
                 ))}
               </div>
             </section>
@@ -364,25 +370,167 @@ function nodeLabel(node: ArchNode): string {
   return node.id ?? "";
 }
 
-function NodeChip({
-  node,
+// ── Node-link graph ────────────────────────────────────────────────────────
+// Layered (Sugiyama-style) layout: each stage is a column, services are nodes,
+// and curved directional edges connect every node of a stage to every node of
+// the next — an SVG edge layer behind absolutely-positioned HTML node cards.
+
+const NODE_W = 150;
+const NODE_H = 54;
+const H_GAP = 62; // horizontal gap between columns (room for edges)
+const ROW_GAP = 26; // vertical gap between nodes in a column
+const LABEL_H = 26; // space at top for stage labels
+const PAD = 10;
+const COL_STEP = NODE_W + H_GAP;
+
+interface PlacedNode {
+  node: ArchNode;
+  x: number;
+  y: number;
+}
+
+function ArchGraph({
+  pattern,
+  accent,
+  onReview,
+}: {
+  pattern: ArchPattern;
+  accent: Accent;
+  onReview: (serviceId: string) => void;
+}) {
+  const { columns, edges, width, height } = useMemo(() => {
+    const stages = pattern.stages;
+    const maxCount = Math.max(...stages.map((s) => s.nodes.length));
+    const contentH = maxCount * NODE_H + (maxCount - 1) * ROW_GAP;
+    const topOffset = LABEL_H + PAD;
+
+    const columns: PlacedNode[][] = stages.map((stage, i) => {
+      const n = stage.nodes.length;
+      const colH = n * NODE_H + (n - 1) * ROW_GAP;
+      const startY = topOffset + (contentH - colH) / 2;
+      const x = PAD + i * COL_STEP;
+      return stage.nodes.map((node, j) => ({
+        node,
+        x,
+        y: startY + j * (NODE_H + ROW_GAP),
+      }));
+    });
+
+    const edges: { d: string; key: string }[] = [];
+    for (let i = 0; i < columns.length - 1; i++) {
+      for (const a of columns[i]) {
+        for (const b of columns[i + 1]) {
+          const x1 = a.x + NODE_W;
+          const y1 = a.y + NODE_H / 2;
+          const x2 = b.x;
+          const y2 = b.y + NODE_H / 2;
+          const dx = (x2 - x1) / 2;
+          edges.push({
+            key: `${i}-${a.y}-${b.y}`,
+            d: `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
+          });
+        }
+      }
+    }
+
+    return {
+      columns,
+      edges,
+      width: PAD * 2 + stages.length * NODE_W + (stages.length - 1) * H_GAP,
+      height: topOffset + contentH + PAD,
+    };
+  }, [pattern]);
+
+  const arrowId = `arrow-${pattern.id}`;
+
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div
+        className="relative mx-auto"
+        style={{ width, height, minWidth: width }}
+      >
+        {/* Edge layer */}
+        <svg
+          width={width}
+          height={height}
+          className="absolute inset-0"
+          aria-hidden="true"
+        >
+          <defs>
+            <marker
+              id={arrowId}
+              markerWidth="7"
+              markerHeight="7"
+              refX="5.5"
+              refY="3"
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <path d="M0,0 L6,3 L0,6 Z" className={accent.arrow} />
+            </marker>
+          </defs>
+          {edges.map((e) => (
+            <path
+              key={e.key}
+              d={e.d}
+              fill="none"
+              strokeWidth={1.5}
+              className={accent.edge}
+              markerEnd={`url(#${arrowId})`}
+            />
+          ))}
+        </svg>
+
+        {/* Stage labels */}
+        {pattern.stages.map((stage, i) => (
+          <div
+            key={i}
+            className={`absolute text-center text-[10px] font-bold uppercase tracking-wider ${accent.text}`}
+            style={{ left: PAD + i * COL_STEP, top: 0, width: NODE_W }}
+          >
+            {i + 1}. {stage.label}
+          </div>
+        ))}
+
+        {/* Node layer */}
+        {columns.flat().map((p, i) => (
+          <GraphNode
+            key={i}
+            placed={p}
+            accentChip={accent.chip}
+            onReview={onReview}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GraphNode({
+  placed,
   accentChip,
   onReview,
 }: {
-  node: ArchNode;
+  placed: PlacedNode;
   accentChip: string;
   onReview: (serviceId: string) => void;
 }) {
+  const { node, x, y } = placed;
   const svc = node.id ? SERVICE_INDEX[node.id] : undefined;
   const label = nodeLabel(node);
+  const style = { left: x, top: y, width: NODE_W, height: NODE_H } as const;
 
-  // Not a real service node (e.g. Eventarc) → static reference chip.
+  // Not a real service node (e.g. Eventarc) → static, dashed reference node.
   if (!svc) {
     return (
-      <span className="flex items-center gap-1.5 rounded-md border border-dashed border-zinc-700 bg-zinc-900/40 px-2 py-1 text-[11px] text-zinc-400">
-        <Boxes className="h-3 w-3 shrink-0 text-zinc-600" />
-        {label}
-      </span>
+      <div
+        className="absolute flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-zinc-900/50 px-2.5 text-[11px] leading-tight text-zinc-400"
+        style={style}
+        title={`${label} (not a mapped node)`}
+      >
+        <Boxes className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+        <span className="line-clamp-2">{label}</span>
+      </div>
     );
   }
 
@@ -391,10 +539,11 @@ function NodeChip({
     <button
       onClick={() => onReview(svc.id)}
       title={`Open ${svc.name}`}
-      className={`flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900/70 px-2 py-1 text-[11px] font-medium text-zinc-200 transition-colors ${accentChip}`}
+      className={`absolute flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/80 px-2.5 text-left text-[11px] font-medium leading-tight text-zinc-200 shadow-sm transition-colors ${accentChip}`}
+      style={style}
     >
-      <Icon className="h-3 w-3 shrink-0" />
-      {label}
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="line-clamp-2">{label}</span>
     </button>
   );
 }
