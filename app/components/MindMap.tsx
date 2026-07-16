@@ -662,10 +662,9 @@ export function MindMap() {
       {/* ── Architecture Patterns overlay ──────────────────────────────── */}
       {archOpen && (
         <ArchitecturePatterns
-          onReview={(id) => {
-            setArchOpen(false);
-            setSelectedId(id);
-          }}
+          // Keep the overlay mounted underneath; the detail panel layers on top
+          // (higher z-index) so closing it returns here, not to the homepage.
+          onReview={(id) => setSelectedId(id)}
           onClose={() => setArchOpen(false)}
         />
       )}

@@ -219,7 +219,7 @@ export function DetailPanel({
       <div
         aria-hidden={!open}
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -229,7 +229,7 @@ export function DetailPanel({
         role="dialog"
         aria-modal="true"
         aria-label={service ? `${service.name} details` : "Service details"}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-[70] flex h-full w-full flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-300 ease-out ${
           isMatrix ? "max-w-3xl sm:w-[46rem]" : "max-w-md sm:w-[30rem]"
         } ${open ? "translate-x-0" : "translate-x-full"}`}
       >
